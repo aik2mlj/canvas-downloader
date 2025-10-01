@@ -764,7 +764,7 @@ async fn process_pages(
         let page_result = serde_json::from_str::<canvas::PageResult>(&page_body);
 
         match page_result {
-            Ok(canvas::PageResult::Ok(pages)) => {
+            Ok(canvas::PageResult::Ok(pages)) | Ok(canvas::PageResult::Direct(pages)) => {
                 for page in pages {
                     let page_url = format!("{}pages/{}", url, page.url);
                     let page_file_path = path.join(page.url.clone());
@@ -780,6 +780,10 @@ async fn process_pages(
 
             Ok(canvas::PageResult::Err { status }) => {
                 eprintln!("No pages found for url {} status: {}", uri, status);
+            }
+
+            Ok(canvas::PageResult::Empty(_)) => {
+                eprintln!("No pages found for url {} (empty response)", uri);
             }
 
             Err(e) => {
@@ -857,9 +861,9 @@ async fn process_assignments(
         let assignment_result = serde_json::from_str::<canvas::AssignmentResult>(&page_body);
 
         match assignment_result {
-            Ok(canvas::AssignmentResult::Ok(assignments)) => {
+            Ok(canvas::AssignmentResult::Ok(assignments)) | Ok(canvas::AssignmentResult::Direct(assignments)) => {
                 for assignment in assignments {
-                    let assignment_path = path.join(assignment.name);
+                    let assignment_path = path.join(sanitize_filename::sanitize(assignment.name));
                     create_folder_if_not_exist(&assignment_path)?;
                     let submissions_url = format!("{}assignments/{}/submissions/", url, assignment.id);
                     fork!(
@@ -880,6 +884,9 @@ async fn process_assignments(
                 eprintln!(
                     "Failed to access assignments at link:{uri}, path:{path:?}, status:{status}",
                 );
+            }
+            Ok(canvas::AssignmentResult::Empty(_)) => {
+                eprintln!("No assignments found for url {} (empty response)", uri);
             }
             Err(e) => {
                 eprintln!("Error when getting assignments at link:{uri}, path:{path:?}\n{e:?}",);
@@ -1391,6 +1398,10 @@ mod canvas {
     pub(crate) enum PageResult {
         Err { status: String },
         Ok(Vec<Page>),
+        // Handle direct array response without wrapper
+        Direct(Vec<Page>),
+        // Handle empty response or null
+        Empty(Option<serde_json::Value>),
     }
 
     #[derive(Clone, Debug, Deserialize)]
@@ -1417,6 +1428,10 @@ mod canvas {
     pub(crate) enum AssignmentResult {
         Err { status: String },
         Ok(Vec<Assignment>),
+        // Handle direct array response without wrapper
+        Direct(Vec<Assignment>),
+        // Handle empty response or any other format
+        Empty(Option<serde_json::Value>),
     }
     #[derive(Clone, Debug, Deserialize)]
     pub struct Assignment {
@@ -1427,8 +1442,9 @@ mod canvas {
 
     #[derive(Clone, Debug, Deserialize)]
     pub struct Submission {
-        pub id: u32,
+        pub id: Option<u32>,
         pub body: Option<String>,
+        #[serde(default)]
         pub attachments: Vec<File>,
     }
     
