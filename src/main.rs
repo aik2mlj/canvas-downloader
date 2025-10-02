@@ -1116,20 +1116,21 @@ async fn process_files((url, path): (String, PathBuf), options: Arc<ProcessOptio
     Ok(())
 }
 
+fn updated(filepath: &PathBuf, new_modified: &str) -> bool {
+    (|| -> Result<bool> {
+        let old_modified = std::fs::metadata(filepath)?.modified()?;
+        let new_modified =
+            std::time::SystemTime::from(DateTime::parse_from_rfc3339(new_modified)?);
+        let updated = old_modified < new_modified;
+        if updated {
+            println!("Found update for {filepath:?}. Use -n to download updated files.");
+        }
+        Ok(updated)
+    })()
+    .unwrap_or(false)
+}
+
 fn filter_files(options: &ProcessOptions, path: &Path, files: Vec<File>) -> Vec<File> {
-    fn updated(filepath: &PathBuf, new_modified: &str) -> bool {
-        (|| -> Result<bool> {
-            let old_modified = std::fs::metadata(filepath)?.modified()?;
-            let new_modified =
-                std::time::SystemTime::from(DateTime::parse_from_rfc3339(new_modified)?);
-            let updated = old_modified < new_modified;
-            if updated {
-                println!("Found update for {filepath:?}. Use -n to download updated files.");
-            }
-            Ok(updated)
-        })()
-        .unwrap_or(false)
-    }
 
     // only download files that do not exist or are updated
     files
@@ -1236,8 +1237,14 @@ async fn process_module_items(
                                 
                                 match process_file_id((file_url, path.clone()), options.clone()).await {
                                     Ok(file) => {
-                                        let mut lock = options.files_to_download.lock().await;
-                                        lock.push(file);
+                                        // Apply same file overwrite logic as other downloads
+                                        let should_download = !file.filepath.exists() || 
+                                            (updated(&file.filepath, &file.updated_at) && options.download_newer);
+                                        
+                                        if should_download {
+                                            let mut lock = options.files_to_download.lock().await;
+                                            lock.push(file);
+                                        }
                                     }
                                     Err(e) => {
                                         eprintln!("Error processing module file {}: {:?}", content_id, e);
