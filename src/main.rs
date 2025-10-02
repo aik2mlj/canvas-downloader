@@ -177,10 +177,9 @@ async fn main() -> Result<()> {
             cred.canvas_url, course.id
         );
 
-        let folder_path = course_folder_path.join("files");
         fork!(
             process_folders,
-            (course_folders_link, folder_path),
+            (course_folders_link, course_folder_path.clone()),
             (String, PathBuf),
             options.clone()
         );
@@ -196,11 +195,9 @@ async fn main() -> Result<()> {
             options.clone()
         );
 
-        let video_folder_path = course_folder_path.join("videos");
-        create_folder_if_not_exist(&video_folder_path)?;
         fork!(
             process_videos,
-            (cred.canvas_url.clone(), course.id, video_folder_path),
+            (cred.canvas_url.clone(), course.id, course_folder_path.clone()),
             (String, u32, PathBuf),
             options.clone()
         );
@@ -395,19 +392,10 @@ async fn process_folders(
                     // if the folder has no parent, it is the root folder of a course
                     // so we avoid the extra directory nesting by not appending the root folder name
                     let folder_path = if folder.parent_folder_id.is_some() {
-                        path.join(sanitized_folder_name)
+                        path.join("files").join(sanitized_folder_name)
                     } else {
-                        path.clone()
+                        path.join("files")
                     };
-                    if !folder_path.exists() {
-                        if let Err(e) = std::fs::create_dir(&folder_path) {
-                            eprintln!(
-                                "Failed to create directory: {}, err={e}",
-                                folder_path.to_string_lossy()
-                            );
-                            continue;
-                        };
-                    }
 
                     fork!(
                         process_files,
@@ -506,8 +494,10 @@ async fn process_videos(
         .host_str()
         .ok_or(anyhow!("Could not get Panopto Host"))?
         .to_string();
-        
-    process_video_folder((panopto_host, panopto_folder_id, client.clone(), path), options).await?;
+    
+    let video_folder_path = path.join("videos");
+    create_folder_if_not_exist(&video_folder_path)?;
+    process_video_folder((panopto_host, panopto_folder_id, client.clone(), video_folder_path), options).await?;
     Ok(())
 }
 
@@ -715,35 +705,27 @@ async fn process_data(
         (String, PathBuf),
         options.clone()
     );
-    let discussions_path = path.join("discussions");
-    create_folder_if_not_exist(&discussions_path)?;
     fork!(
         process_discussions,
-        (url.clone(), false, discussions_path),
+        (url.clone(), false, path.clone()),
         (String, bool, PathBuf),
         options.clone()
     );
-    let announcements_path = path.join("announcements");
-    create_folder_if_not_exist(&announcements_path)?;
     fork!(
         process_discussions,
-        (url.clone(), true, announcements_path),
+        (url.clone(), true, path.clone()),
         (String, bool, PathBuf),
         options.clone()
     );
-    let pages_path = path.join("pages");
-    create_folder_if_not_exist(&pages_path)?;
     fork!(
         process_pages,
-        (url.clone(), pages_path),
+        (url.clone(), path.clone()),
         (String, PathBuf),
         options.clone()
     );
-    let modules_path = path.join("modules");
-    create_folder_if_not_exist(&modules_path)?;
     fork!(
         process_modules,
-        (url.clone(), modules_path),
+        (url.clone(), path.clone()),
         (String, PathBuf),
         options.clone()
     );
@@ -757,32 +739,45 @@ async fn process_pages(
     let pages_url = format!("{}pages", url);
     let pages = get_pages(pages_url, &options).await?;
     
-    let pages_path = path.join("pages.json");
-    let mut pages_file = std::fs::File::create(pages_path.clone())
-        .with_context(|| format!("Unable to create file for {:?}", pages_path))?;
+    let mut has_pages = false;
+    let mut pages_folder_path = None;
 
     for pg in pages {
         let uri = pg.url().to_string();
         let page_body = pg.text().await?;
 
-        pages_file
-            .write_all(page_body.as_bytes())
-            .with_context(|| format!("Could not write to file {:?}", pages_path))?;
-
         let page_result = serde_json::from_str::<canvas::PageResult>(&page_body);
 
         match page_result {
             Ok(canvas::PageResult::Ok(pages)) | Ok(canvas::PageResult::Direct(pages)) => {
+                if !pages.is_empty() && !has_pages {
+                    // Create pages folder only when we have actual pages
+                    let pages_path = path.join("pages");
+                    create_folder_if_not_exist(&pages_path)?;
+                    pages_folder_path = Some(pages_path.clone());
+                    has_pages = true;
+                    
+                    // Create pages.json file
+                    let pages_json_path = pages_path.join("pages.json");
+                    let mut pages_file = std::fs::File::create(pages_json_path.clone())
+                        .with_context(|| format!("Unable to create file for {:?}", pages_json_path))?;
+                    pages_file
+                        .write_all(page_body.as_bytes())
+                        .with_context(|| format!("Could not write to file {:?}", pages_json_path))?;
+                }
+                
                 for page in pages {
-                    let page_url = format!("{}pages/{}", url, page.url);
-                    let page_file_path = path.join(page.url.clone());
-                    create_folder_if_not_exist(&page_file_path)?;
-                    fork!(
-                        process_page_body,
-                        (page_url, page.url, page_file_path),
-                        (String, String, PathBuf),
-                        options.clone()
-                    )
+                    if let Some(ref pages_path) = pages_folder_path {
+                        let page_url = format!("{}pages/{}", url, page.url);
+                        let page_file_path = pages_path.join(page.url.clone());
+                        create_folder_if_not_exist(&page_file_path)?;
+                        fork!(
+                            process_page_body,
+                            (page_url, page.url, page_file_path),
+                            (String, String, PathBuf),
+                            options.clone()
+                        )
+                    }
                 }
             }
 
@@ -963,53 +958,67 @@ async fn process_discussions(
     let discussion_url = format!("{}discussion_topics{}", url, if announcement { "?only_announcements=true" } else { "" });
     let pages = get_pages(discussion_url, &options).await?;
 
-    let discussion_path = path.join("discussions.json");
-    let mut discussion_file = std::fs::File::create(discussion_path.clone())
-        .with_context(|| format!("Unable to create file for {:?}", discussion_path))?;
+    let mut has_discussions = false;
+    let mut discussions_folder_path = None;
 
     for pg in pages {
         let uri = pg.url().to_string();
         let page_body = pg.text().await?;
 
-        discussion_file
-            .write_all(page_body.as_bytes())
-            .with_context(|| format!("Unable to write to file for {:?}", discussion_path))?;
-
         let discussion_result = serde_json::from_str::<canvas::DiscussionResult>(&page_body);
 
         match discussion_result {
             Ok(canvas::DiscussionResult::Ok(discussions)) => {
-                for discussion in discussions {
-                    // download attachments
-                    let discussion_folder_path = path.join(format!("{}_{}", discussion.id, sanitize_filename::sanitize(discussion.title)));
-                    create_folder_if_not_exist(&discussion_folder_path)?;
-
-                    let files = discussion.attachments
-                        .into_iter()
-                        .map(|mut f| {
-                            f.display_name = format!("{}_{}", f.id, &f.display_name);
-                            f
-                        })
-                        .collect();
-                    {
-                        let mut filtered_files = filter_files(&options, &discussion_folder_path, files);
-                        let mut lock = options.files_to_download.lock().await;
-                        lock.append(&mut filtered_files);
-                    }
+                if !discussions.is_empty() && !has_discussions {
+                    // Create discussions or announcements folder only when we have actual discussions
+                    let folder_name = if announcement { "announcements" } else { "discussions" };
+                    let folder_path = path.join(folder_name);
+                    create_folder_if_not_exist(&folder_path)?;
+                    discussions_folder_path = Some(folder_path.clone());
+                    has_discussions = true;
                     
-                    fork!(
-                        process_html_links,
-                        (discussion.message, discussion_folder_path.clone()),
-                        (String, PathBuf),
-                        options.clone()
-                    );
-                    let view_url = format!("{}discussion_topics/{}/view", url, discussion.id);
-                    fork!(
-                        process_discussion_view,
-                        (view_url, discussion_folder_path),
-                        (String, PathBuf),
-                        options.clone()
-                    )
+                    // Create discussions.json file
+                    let discussion_path = folder_path.join("discussions.json");
+                    let mut discussion_file = std::fs::File::create(discussion_path.clone())
+                        .with_context(|| format!("Unable to create file for {:?}", discussion_path))?;
+                    discussion_file
+                        .write_all(page_body.as_bytes())
+                        .with_context(|| format!("Unable to write to file for {:?}", discussion_path))?;
+                }
+
+                for discussion in discussions {
+                    if let Some(ref folder_path) = discussions_folder_path {
+                        // download attachments
+                        let discussion_folder_path = folder_path.join(format!("{}_{}", discussion.id, sanitize_filename::sanitize(discussion.title)));
+                        create_folder_if_not_exist(&discussion_folder_path)?;
+
+                        let files = discussion.attachments
+                            .into_iter()
+                            .map(|mut f| {
+                                f.display_name = format!("{}_{}", f.id, &f.display_name);
+                                f
+                            })
+                            .collect();
+                        {
+                            let mut filtered_files = filter_files(&options, &discussion_folder_path, files);
+                            let mut lock = options.files_to_download.lock().await;
+                            lock.append(&mut filtered_files);
+                        }
+                        
+                        fork!(
+                            process_html_links,
+                            (discussion.message, discussion_folder_path.clone()),
+                            (String, PathBuf),
+                            options.clone()
+                        );
+                        let view_url = format!("{}discussion_topics/{}/view", url, discussion.id);
+                        fork!(
+                            process_discussion_view,
+                            (view_url, discussion_folder_path),
+                            (String, PathBuf),
+                            options.clone()
+                        )
+                    }
                 }
             }
             Ok(canvas::DiscussionResult::Err { status }) => {
@@ -1091,9 +1100,22 @@ async fn process_files((url, path): (String, PathBuf), options: Arc<ProcessOptio
         match files_result {
             // Got files
             Ok(canvas::FileResult::Ok(files)) => {
-                let mut filtered_files = filter_files(&options, &path, files);
-                let mut lock = options.files_to_download.lock().await;
-                lock.append(&mut filtered_files);
+                if !files.is_empty() {
+                    // Only create the folder structure when there are actual files
+                    if !path.exists() {
+                        if let Err(e) = std::fs::create_dir_all(&path) {
+                            eprintln!(
+                                "Failed to create directory: {}, err={e}",
+                                path.to_string_lossy()
+                            );
+                            continue;
+                        };
+                    }
+                    
+                    let mut filtered_files = filter_files(&options, &path, files);
+                    let mut lock = options.files_to_download.lock().await;
+                    lock.append(&mut filtered_files);
+                }
             }
 
             // Got status code
@@ -1164,30 +1186,43 @@ async fn process_modules(
     let modules_url = format!("{}modules", url);
     let pages = get_pages(modules_url, &options).await?;
 
+    let mut has_modules = false;
+    let mut modules_folder_path = None;
+
     for page in pages {
         let module_body = page.text().await?;
-        let module_json = path.join("modules.json");
-        let mut module_file = std::fs::File::create(module_json.clone())
-            .with_context(|| format!("Unable to create file for {:?}", module_json))?;
-
-        module_file
-            .write_all(module_body.as_bytes())
-            .with_context(|| format!("Unable to write to file for {:?}", module_json))?;
-
         let module_result = serde_json::from_str::<canvas::ModuleResult>(&module_body);
 
         match module_result {
             Ok(canvas::ModuleResult::Ok(modules)) | Ok(canvas::ModuleResult::Direct(modules)) => {
-                for module in modules {
-                    let module_path = path.join(sanitize_filename::sanitize(&module.name));
-                    create_folder_if_not_exist(&module_path)?;
+                if !modules.is_empty() && !has_modules {
+                    // Create modules folder only when we have actual modules
+                    let modules_path = path.join("modules");
+                    create_folder_if_not_exist(&modules_path)?;
+                    modules_folder_path = Some(modules_path.clone());
+                    has_modules = true;
                     
-                    fork!(
-                        process_module_items,
-                        (module.items_url, module_path),
-                        (String, PathBuf),
-                        options.clone()
-                    );
+                    // Create modules.json file
+                    let module_json = modules_path.join("modules.json");
+                    let mut module_file = std::fs::File::create(module_json.clone())
+                        .with_context(|| format!("Unable to create file for {:?}", module_json))?;
+                    module_file
+                        .write_all(module_body.as_bytes())
+                        .with_context(|| format!("Unable to write to file for {:?}", module_json))?;
+                }
+                
+                for module in modules {
+                    if let Some(ref modules_path) = modules_folder_path {
+                        let module_path = modules_path.join(sanitize_filename::sanitize(&module.name));
+                        create_folder_if_not_exist(&module_path)?;
+                        
+                        fork!(
+                            process_module_items,
+                            (module.items_url, module_path),
+                            (String, PathBuf),
+                            options.clone()
+                        );
+                    }
                 }
             }
 
