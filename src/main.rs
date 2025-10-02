@@ -177,9 +177,11 @@ async fn main() -> Result<()> {
             cred.canvas_url, course.id
         );
 
+        let folder_path = course_folder_path.join("files");
+        create_folder_if_not_exist(&folder_path)?;
         fork!(
             process_folders,
-            (course_folders_link, course_folder_path.clone()),
+            (course_folders_link, folder_path),
             (String, PathBuf),
             options.clone()
         );
@@ -392,10 +394,19 @@ async fn process_folders(
                     // if the folder has no parent, it is the root folder of a course
                     // so we avoid the extra directory nesting by not appending the root folder name
                     let folder_path = if folder.parent_folder_id.is_some() {
-                        path.join("files").join(sanitized_folder_name)
+                        path.join(sanitized_folder_name)
                     } else {
-                        path.join("files")
+                        path.clone()
                     };
+                    if !folder_path.exists() {
+                        if let Err(e) = std::fs::create_dir(&folder_path) {
+                            eprintln!(
+                                "Failed to create directory: {}, err={e}",
+                                folder_path.to_string_lossy()
+                            );
+                            continue;
+                        };
+                    }
 
                     fork!(
                         process_files,
@@ -1100,22 +1111,9 @@ async fn process_files((url, path): (String, PathBuf), options: Arc<ProcessOptio
         match files_result {
             // Got files
             Ok(canvas::FileResult::Ok(files)) => {
-                if !files.is_empty() {
-                    // Only create the folder structure when there are actual files
-                    if !path.exists() {
-                        if let Err(e) = std::fs::create_dir_all(&path) {
-                            eprintln!(
-                                "Failed to create directory: {}, err={e}",
-                                path.to_string_lossy()
-                            );
-                            continue;
-                        };
-                    }
-                    
-                    let mut filtered_files = filter_files(&options, &path, files);
-                    let mut lock = options.files_to_download.lock().await;
-                    lock.append(&mut filtered_files);
-                }
+                let mut filtered_files = filter_files(&options, &path, files);
+                let mut lock = options.files_to_download.lock().await;
+                lock.append(&mut filtered_files);
             }
 
             // Got status code
