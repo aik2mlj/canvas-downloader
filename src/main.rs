@@ -1326,15 +1326,32 @@ async fn get_canvas_api(url: String, options: &ProcessOptions) -> Result<Respons
 
         match resp {
             Ok(resp) => {
-                if resp.status() != reqwest::StatusCode::FORBIDDEN || retry == 2 {
+                if resp.status() == reqwest::StatusCode::FORBIDDEN {
+                    if retry == 2 {
+                        // Log more specific error information on final retry
+                        if url.contains("users") {
+                            eprintln!("Access denied to user data for course - API token may need elevated permissions");
+                        } else if url.contains("discussion_topics") {
+                            eprintln!("Access denied to discussions - course may have restricted discussion access");
+                        } else {
+                            eprintln!("Access denied to {} - check API token permissions", url);
+                        }
+                        return Ok(resp)
+                    }
+                } else {
                     return Ok(resp)
                 }
             },
             Err(e) => {println!("Canvas request error uri: {} {}", url, e); return Err(e.into())},
         }
 
-        let wait_time = Duration::from_millis(rand::thread_rng().gen_range(0..1000 * 2_u64.pow(retry)));
-        println!("Got 403 for {}, waiting {:?} before retrying, retry {}", url, wait_time, retry);
+        // Exponential backoff with jitter: base delay * 2^retry + random jitter
+        let base_delay = 500; // 500ms base delay
+        let exponential_delay = base_delay * 2_u64.pow(retry);
+        let jitter = rand::thread_rng().gen_range(0..=exponential_delay / 2);
+        let wait_time = Duration::from_millis(exponential_delay + jitter);
+        
+        println!("Rate limited (403) for {}, waiting {:?} before retry {}/3", url, wait_time, retry + 1);
         tokio::time::sleep(wait_time).await;
         
     }
