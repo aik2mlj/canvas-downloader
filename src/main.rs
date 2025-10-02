@@ -739,6 +739,14 @@ async fn process_data(
         (String, PathBuf),
         options.clone()
     );
+    let modules_path = path.join("modules");
+    create_folder_if_not_exist(&modules_path)?;
+    fork!(
+        process_modules,
+        (url.clone(), modules_path),
+        (String, PathBuf),
+        options.clone()
+    );
     Ok(())
 }
 
@@ -1148,6 +1156,160 @@ fn filter_files(options: &ProcessOptions, path: &Path, files: Vec<File>) -> Vec<
         .collect()
 }
 
+async fn process_modules(
+    (url, path): (String, PathBuf),
+    options: Arc<ProcessOptions>,
+) -> Result<()> {
+    let modules_url = format!("{}modules", url);
+    let pages = get_pages(modules_url, &options).await?;
+
+    for page in pages {
+        let module_body = page.text().await?;
+        let module_json = path.join("modules.json");
+        let mut module_file = std::fs::File::create(module_json.clone())
+            .with_context(|| format!("Unable to create file for {:?}", module_json))?;
+
+        module_file
+            .write_all(module_body.as_bytes())
+            .with_context(|| format!("Unable to write to file for {:?}", module_json))?;
+
+        let module_result = serde_json::from_str::<canvas::ModuleResult>(&module_body);
+
+        match module_result {
+            Ok(canvas::ModuleResult::Ok(modules)) | Ok(canvas::ModuleResult::Direct(modules)) => {
+                for module in modules {
+                    let module_path = path.join(sanitize_filename::sanitize(&module.name));
+                    create_folder_if_not_exist(&module_path)?;
+                    
+                    fork!(
+                        process_module_items,
+                        (module.items_url, module_path),
+                        (String, PathBuf),
+                        options.clone()
+                    );
+                }
+            }
+
+            Ok(canvas::ModuleResult::Err { status }) => {
+                eprintln!("No modules found for url {} status: {}", url, status);
+            }
+
+            Ok(canvas::ModuleResult::Empty(_)) => {
+                eprintln!("No modules found for url {} (empty response)", url);
+            }
+
+            Err(e) => {
+                eprintln!("No modules found for url {} error: {}", url, e);
+            }
+        };
+    }
+
+    Ok(())
+}
+
+async fn process_module_items(
+    (url, path): (String, PathBuf),
+    options: Arc<ProcessOptions>,
+) -> Result<()> {
+    let pages = get_pages(url.clone(), &options).await?;
+
+    for page in pages {
+        let items_body = page.text().await?;
+        let items_json = path.join("module_items.json");
+        let mut items_file = std::fs::File::create(items_json.clone())
+            .with_context(|| format!("Unable to create file for {:?}", items_json))?;
+
+        items_file
+            .write_all(items_body.as_bytes())
+            .with_context(|| format!("Unable to write to file for {:?}", items_json))?;
+
+        let items_result = serde_json::from_str::<canvas::ModuleItemResult>(&items_body);
+
+        match items_result {
+            Ok(canvas::ModuleItemResult::Ok(items)) | Ok(canvas::ModuleItemResult::Direct(items)) => {
+                for item in items {
+                    match item.item_type.as_str() {
+                        "File" => {
+                            if let Some(content_id) = item.content_id {
+                                let file_url = format!("{}/api/v1/files/{}", 
+                                    options.canvas_url.trim_end_matches('/'), content_id);
+                                
+                                match process_file_id((file_url, path.clone()), options.clone()).await {
+                                    Ok(file) => {
+                                        let mut lock = options.files_to_download.lock().await;
+                                        lock.push(file);
+                                    }
+                                    Err(e) => {
+                                        eprintln!("Error processing module file {}: {:?}", content_id, e);
+                                    }
+                                }
+                            }
+                        }
+                        "Page" => {
+                            if let Some(page_url) = &item.page_url {
+                                let full_page_url = format!("{}pages/{}", 
+                                    url.replace("/modules/", "/").replace("/items", ""), page_url);
+                                let item_path = path.join(sanitize_filename::sanitize(&item.title));
+                                create_folder_if_not_exist(&item_path)?;
+                                
+                                fork!(
+                                    process_page_body,
+                                    (full_page_url, item.title, item_path),
+                                    (String, String, PathBuf),
+                                    options.clone()
+                                );
+                            }
+                        }
+                        "Assignment" => {
+                            if let Some(content_id) = item.content_id {
+                                eprintln!("Module item {} references assignment {}, consider downloading assignments separately", 
+                                         item.title, content_id);
+                            }
+                        }
+                        "Discussion" => {
+                            if let Some(content_id) = item.content_id {
+                                eprintln!("Module item {} references discussion {}, consider downloading discussions separately", 
+                                         item.title, content_id);
+                            }
+                        }
+                        "ExternalUrl" => {
+                            if let Some(external_url) = &item.external_url {
+                                let url_file = path.join(format!("{}.url", sanitize_filename::sanitize(&item.title)));
+                                if let Ok(mut file) = std::fs::File::create(&url_file) {
+                                    let _ = writeln!(file, "[InternetShortcut]");
+                                    let _ = writeln!(file, "URL={}", external_url);
+                                }
+                            }
+                        }
+                        "SubHeader" => {
+                            // SubHeaders are just organizational - create a folder
+                            let subheader_path = path.join(sanitize_filename::sanitize(&item.title));
+                            create_folder_if_not_exist(&subheader_path)?;
+                        }
+                        _ => {
+                            eprintln!("Unsupported module item type '{}' for item '{}'", item.item_type, item.title);
+                        }
+                    }
+                }
+            }
+
+            Ok(canvas::ModuleItemResult::Err { status }) => {
+                eprintln!("Failed to access module items at link:{url}, path:{path:?}, status:{status}");
+            }
+
+            Ok(canvas::ModuleItemResult::Empty(_)) => {
+                eprintln!("No module items found for url {} (empty response)", url);
+            }
+
+            Err(e) => {
+                eprintln!("Error when getting module items at link:{url}, path:{path:?}\n{e:?}");
+            }
+        }
+    }
+
+    Ok(())
+}
+
 async fn process_html_links(
     (html, path): (String, PathBuf),
     options: Arc<ProcessOptions>,
@@ -1543,6 +1705,59 @@ mod canvas {
     pub struct PanoptoDeliveryInfo {
         pub SessionId: String,
         pub ViewerFileId: String,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    pub(crate) enum ModuleResult {
+        Err { status: String },
+        Ok(Vec<Module>),
+        // Handle direct array response without wrapper
+        Direct(Vec<Module>),
+        // Handle empty response or null
+        Empty(Option<serde_json::Value>),
+    }
+
+    #[derive(Clone, Debug, Deserialize)]
+    pub struct Module {
+        pub id: u32,
+        pub name: String,
+        pub position: u32,
+        pub unlock_at: Option<String>,
+        pub require_sequential_progress: Option<bool>,
+        pub publish_final_grade: Option<bool>,
+        pub prerequisite_module_ids: Vec<u32>,
+        pub state: Option<String>,
+        pub completed_at: Option<String>,
+        pub items_count: u32,
+        pub items_url: String,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    pub(crate) enum ModuleItemResult {
+        Err { status: String },
+        Ok(Vec<ModuleItem>),
+        // Handle direct array response without wrapper
+        Direct(Vec<ModuleItem>),
+        // Handle empty response or null
+        Empty(Option<serde_json::Value>),
+    }
+
+    #[derive(Clone, Debug, Deserialize)]
+    pub struct ModuleItem {
+        pub id: u32,
+        pub title: String,
+        #[serde(rename = "type")]
+        pub item_type: String, // "File", "Page", "Discussion", "Assignment", "Quiz", "SubHeader", "ExternalUrl", "ExternalTool"
+        pub content_id: Option<u32>,
+        pub html_url: Option<String>,
+        pub url: Option<String>,
+        pub page_url: Option<String>,
+        pub external_url: Option<String>,
+        pub position: u32,
+        pub indent: u32,
+        pub completion_requirement: Option<serde_json::Value>,
     }
 
     pub struct ProcessOptions {
