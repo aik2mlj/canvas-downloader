@@ -373,6 +373,11 @@ fn create_folder_if_not_exist(folder_path: &PathBuf) -> Result<()> {
     Ok(())
 }
 
+fn prettify_json(json_str: &str) -> Result<String> {
+    let value: Value = serde_json::from_str(json_str)?;
+    Ok(serde_json::to_string_pretty(&value)?)
+}
+
 // async recursion needs boxing
 async fn process_folders(
     (url, path): (String, PathBuf),
@@ -772,8 +777,9 @@ async fn process_pages(
                     let pages_json_path = pages_path.join("pages.json");
                     let mut pages_file = std::fs::File::create(pages_json_path.clone())
                         .with_context(|| format!("Unable to create file for {:?}", pages_json_path))?;
+                    let pretty_json = prettify_json(&page_body).unwrap_or(page_body.clone());
                     pages_file
-                        .write_all(page_body.as_bytes())
+                        .write_all(pretty_json.as_bytes())
                         .with_context(|| format!("Could not write to file {:?}", pages_json_path))?;
                 }
                 
@@ -820,8 +826,9 @@ async fn process_page_body(
         .with_context(|| format!("Unable to create file for {:?}", page_file_path))?;
 
     let page_resp_text = page_resp.text().await?;
+    let pretty_json = prettify_json(&page_resp_text).unwrap_or(page_resp_text.clone());
     page_file
-        .write_all(page_resp_text.as_bytes())
+        .write_all(pretty_json.as_bytes())
         .with_context(|| format!("Could not write to file {:?}", page_file_path))?;
 
     let page_body_result = serde_json::from_str::<canvas::PageBody>(&page_resp_text);
@@ -868,8 +875,9 @@ async fn process_assignments(
         let uri = pg.url().to_string();
         let page_body = pg.text().await?;
 
+        let pretty_json = prettify_json(&page_body).unwrap_or(page_body.clone());
         assignments_file
-            .write_all(page_body.as_bytes())
+            .write_all(pretty_json.as_bytes())
             .with_context(|| format!("Unable to write to file for {:?}", assignments_json))?;
 
         let assignment_result = serde_json::from_str::<canvas::AssignmentResult>(&page_body);
@@ -922,8 +930,9 @@ async fn process_submissions(
     let mut submissions_file = std::fs::File::create(submissions_json.clone())
         .with_context(|| format!("Unable to create file for {:?}", submissions_json))?;
 
+    let pretty_json = prettify_json(&submissions_body).unwrap_or(submissions_body.clone());
     submissions_file
-        .write_all(submissions_body.as_bytes())
+        .write_all(pretty_json.as_bytes())
         .with_context(|| format!("Unable to write to file for {:?}", submissions_json))?;
 
     let submissions_result = serde_json::from_str::<canvas::Submission>(&submissions_body);
@@ -953,9 +962,10 @@ async fn process_users (
 
     for pg in pages {
         let page_body = pg.text().await?;
-        
+
+        let pretty_json = prettify_json(&page_body).unwrap_or(page_body.clone());
         users_file
-            .write_all(page_body.as_bytes())
+            .write_all(pretty_json.as_bytes())
             .with_context(|| format!("Unable to write to file for {:?}", users_path))?;
     }
 
@@ -992,8 +1002,9 @@ async fn process_discussions(
                     let discussion_path = folder_path.join("discussions.json");
                     let mut discussion_file = std::fs::File::create(discussion_path.clone())
                         .with_context(|| format!("Unable to create file for {:?}", discussion_path))?;
+                    let pretty_json = prettify_json(&page_body).unwrap_or(page_body.clone());
                     discussion_file
-                        .write_all(page_body.as_bytes())
+                        .write_all(pretty_json.as_bytes())
                         .with_context(|| format!("Unable to write to file for {:?}", discussion_path))?;
                 }
 
@@ -1056,8 +1067,9 @@ async fn process_discussion_view(
     let mut discussion_view_file = std::fs::File::create(discussion_view_json.clone())
         .with_context(|| format!("Unable to create file for {:?}", discussion_view_json))?;
 
+    let pretty_json = prettify_json(&discussion_view_body).unwrap_or(discussion_view_body.clone());
     discussion_view_file
-        .write_all(discussion_view_body.as_bytes())
+        .write_all(pretty_json.as_bytes())
         .with_context(|| format!("Unable to write to file for {:?}", discussion_view_json))?;
 
     let discussion_view_result = serde_json::from_str::<canvas::DiscussionView>(&discussion_view_body);
@@ -1204,8 +1216,9 @@ async fn process_modules(
                     let module_json = modules_path.join("modules.json");
                     let mut module_file = std::fs::File::create(module_json.clone())
                         .with_context(|| format!("Unable to create file for {:?}", module_json))?;
+                    let pretty_json = prettify_json(&module_body).unwrap_or(module_body.clone());
                     module_file
-                        .write_all(module_body.as_bytes())
+                        .write_all(pretty_json.as_bytes())
                         .with_context(|| format!("Unable to write to file for {:?}", module_json))?;
                 }
                 
@@ -1253,8 +1266,9 @@ async fn process_module_items(
         let mut items_file = std::fs::File::create(items_json.clone())
             .with_context(|| format!("Unable to create file for {:?}", items_json))?;
 
+        let pretty_json = prettify_json(&items_body).unwrap_or(items_body.clone());
         items_file
-            .write_all(items_body.as_bytes())
+            .write_all(pretty_json.as_bytes())
             .with_context(|| format!("Unable to write to file for {:?}", items_json))?;
 
         let items_result = serde_json::from_str::<canvas::ModuleItemResult>(&items_body);
