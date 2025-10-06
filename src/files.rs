@@ -252,7 +252,8 @@ pub async fn process_file_id(
     let file_result = file_resp.json::<File>().await;
     match file_result {
         Result::Ok(mut file) => {
-            let file_path = path.join(&file.display_name);
+            let sanitized_filename = sanitize_filename::sanitize(&file.display_name);
+            let file_path = path.join(sanitized_filename);
             file.filepath = file_path;
             return Ok(file);
         }
@@ -302,6 +303,7 @@ pub async fn prepare_link_for_download(
         })
         .unwrap_or_else(|| Local::now().to_rfc3339());
 
+    let sanitized_filename = sanitize_filename::sanitize(filename);
     let file = File {
         id: 0,
         folder_id: 0,
@@ -310,7 +312,7 @@ pub async fn prepare_link_for_download(
         url: link.clone(),
         updated_at: updated_at,
         locked_for_user: false,
-        filepath: path.join(filename),
+        filepath: path.join(sanitized_filename),
     };
     Ok(file)
 }
