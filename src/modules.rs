@@ -105,13 +105,12 @@ async fn process_module_items(
 
                                 match process_file_id((file_url, path.clone()), options.clone()).await {
                                     Ok(file) => {
-                                        // Apply same file overwrite logic as other downloads
-                                        let should_download = !file.filepath.exists() ||
-                                            (filter_files(&options, &path, vec![file.clone()]).len() > 0);
+                                        // Use filter_files to apply standard filtering logic
+                                        let filtered = filter_files(&options, &path, vec![file]);
 
-                                        if should_download {
+                                        if !filtered.is_empty() {
                                             let mut lock = options.files_to_download.lock().await;
-                                            lock.push(file);
+                                            lock.push(filtered.into_iter().next().unwrap());
                                         }
                                     }
                                     Err(e) => {
