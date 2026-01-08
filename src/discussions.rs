@@ -14,7 +14,15 @@ pub async fn process_discussions(
     (url, announcement, path): (String, bool, PathBuf),
     options: Arc<ProcessOptions>,
 ) -> Result<()> {
-    let discussion_url = format!("{}discussion_topics{}", url, if announcement { "?only_announcements=true" } else { "" });
+    let discussion_url = format!(
+        "{}discussion_topics{}",
+        url,
+        if announcement {
+            "?only_announcements=true"
+        } else {
+            ""
+        }
+    );
     let pages = get_pages(discussion_url, &options).await?;
 
     let mut has_discussions = false;
@@ -30,7 +38,11 @@ pub async fn process_discussions(
             Ok(DiscussionResult::Ok(discussions)) => {
                 if !discussions.is_empty() && !has_discussions {
                     // Create discussions or announcements folder only when we have actual discussions
-                    let folder_name = if announcement { "announcements" } else { "discussions" };
+                    let folder_name = if announcement {
+                        "announcements"
+                    } else {
+                        "discussions"
+                    };
                     let folder_path = path.join(folder_name);
                     create_folder_if_not_exist(&folder_path)?;
                     discussions_folder_path = Some(folder_path.clone());
@@ -39,20 +51,29 @@ pub async fn process_discussions(
                     // Create discussions.json file
                     let discussion_path = folder_path.join("discussions.json");
                     let mut discussion_file = std::fs::File::create(discussion_path.clone())
-                        .with_context(|| format!("Unable to create file for {:?}", discussion_path))?;
+                        .with_context(|| {
+                            format!("Unable to create file for {:?}", discussion_path)
+                        })?;
                     let pretty_json = prettify_json(&page_body).unwrap_or(page_body.clone());
                     discussion_file
                         .write_all(pretty_json.as_bytes())
-                        .with_context(|| format!("Unable to write to file for {:?}", discussion_path))?;
+                        .with_context(|| {
+                            format!("Unable to write to file for {:?}", discussion_path)
+                        })?;
                 }
 
                 for discussion in discussions {
                     if let Some(ref folder_path) = discussions_folder_path {
                         // download attachments
-                        let discussion_folder_path = folder_path.join(format!("{}_{}", discussion.id, sanitize_filename::sanitize(discussion.title)));
+                        let discussion_folder_path = folder_path.join(format!(
+                            "{}_{}",
+                            discussion.id,
+                            sanitize_filename::sanitize(discussion.title)
+                        ));
                         create_folder_if_not_exist(&discussion_folder_path)?;
 
-                        let files = discussion.attachments
+                        let files = discussion
+                            .attachments
                             .into_iter()
                             .map(|mut f| {
                                 f.display_name = format!("{}_{}", f.id, &f.display_name);
@@ -60,7 +81,8 @@ pub async fn process_discussions(
                             })
                             .collect();
                         {
-                            let mut filtered_files = filter_files(&options, &discussion_folder_path, files);
+                            let mut filtered_files =
+                                filter_files(&options, &discussion_folder_path, files);
                             let mut lock = options.files_to_download.lock().await;
                             lock.append(&mut filtered_files);
                         }

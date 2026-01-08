@@ -1,8 +1,8 @@
-use std::time::Duration;
+use crate::canvas::ProcessOptions;
 use anyhow::{Error, Result};
 use rand::Rng;
 use reqwest::{header, Response, Url};
-use crate::canvas::ProcessOptions;
+use std::time::Duration;
 
 pub async fn get_pages(link: String, options: &ProcessOptions) -> Result<Vec<Response>> {
     fn parse_next_page(resp: &Response) -> Option<String> {
@@ -20,8 +20,7 @@ pub async fn get_pages(link: String, options: &ProcessOptions) -> Result<Vec<Res
         let cur = rels
             .get("current")
             .unwrap_or_else(|| panic!("Could not find current page for {}", resp.url()));
-        let last = rels
-            .get("last")?;
+        let last = rels.get("last")?;
         if cur == last {
             return None;
         };
@@ -46,7 +45,7 @@ pub async fn get_pages(link: String, options: &ProcessOptions) -> Result<Vec<Res
 }
 
 pub async fn get_canvas_api(url: String, options: &ProcessOptions) -> Result<Response> {
-    let mut query_pairs : Vec<(String, String)> = Vec::new();
+    let mut query_pairs: Vec<(String, String)> = Vec::new();
     // insert into query_pairs from url.query_pairs();
     for (key, value) in Url::parse(&url)?.query_pairs() {
         query_pairs.push((key.to_string(), value.to_string()));
@@ -75,13 +74,16 @@ pub async fn get_canvas_api(url: String, options: &ProcessOptions) -> Result<Res
                                 println!("Access denied to {} - check API token permissions", url);
                             }
                         }
-                        return Ok(resp)
+                        return Ok(resp);
                     }
                 } else {
-                    return Ok(resp)
+                    return Ok(resp);
                 }
-            },
-            Err(e) => {println!("Canvas request error uri: {} {}", url, e); return Err(e.into())},
+            }
+            Err(e) => {
+                println!("Canvas request error uri: {} {}", url, e);
+                return Err(e.into());
+            }
         }
 
         // Exponential backoff with jitter: base delay * 2^retry + random jitter
@@ -91,10 +93,14 @@ pub async fn get_canvas_api(url: String, options: &ProcessOptions) -> Result<Res
         let wait_time = Duration::from_millis(exponential_delay + jitter);
 
         if options.verbose {
-            println!("Rate limited (403) for {}, waiting {:?} before retry {}/3", url, wait_time, retry + 1);
+            println!(
+                "Rate limited (403) for {}, waiting {:?} before retry {}/3",
+                url,
+                wait_time,
+                retry + 1
+            );
         }
         tokio::time::sleep(wait_time).await;
-
     }
     Err(Error::msg("canvas request failed"))
 }

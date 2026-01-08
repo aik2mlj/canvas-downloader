@@ -37,11 +37,15 @@ pub async fn process_pages(
                     // Create pages.json file
                     let pages_json_path = pages_path.join("pages.json");
                     let mut pages_file = std::fs::File::create(pages_json_path.clone())
-                        .with_context(|| format!("Unable to create file for {:?}", pages_json_path))?;
+                        .with_context(|| {
+                            format!("Unable to create file for {:?}", pages_json_path)
+                        })?;
                     let pretty_json = prettify_json(&page_body).unwrap_or(page_body.clone());
                     pages_file
                         .write_all(pretty_json.as_bytes())
-                        .with_context(|| format!("Could not write to file {:?}", pages_json_path))?;
+                        .with_context(|| {
+                            format!("Could not write to file {:?}", pages_json_path)
+                        })?;
                 }
 
                 for page in pages {
@@ -103,7 +107,8 @@ pub async fn process_page_body(
         Result::Ok(page_body) => {
             let page_html = format!(
                 "<html><head><title>{}</title></head><body>{}</body></html>",
-                page_body.title, page_body.body);
+                page_body.title, page_body.body
+            );
 
             let page_html_path = path.join(format!("{}.html", page_body.url));
             let mut page_html_file = std::fs::File::create(page_html_path.clone())

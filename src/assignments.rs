@@ -37,7 +37,8 @@ pub async fn process_assignments(
                 for assignment in assignments {
                     let assignment_path = path.join(sanitize_filename::sanitize(assignment.name));
                     create_folder_if_not_exist(&assignment_path)?;
-                    let submissions_url = format!("{}assignments/{}/submissions/", url, assignment.id);
+                    let submissions_url =
+                        format!("{}assignments/{}/submissions/", url, assignment.id);
                     fork!(
                         process_submissions,
                         (submissions_url, assignment_path.clone()),

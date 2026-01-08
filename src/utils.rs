@@ -1,8 +1,8 @@
-use std::collections::HashMap;
-use std::path::PathBuf;
+use crate::canvas::Course;
 use anyhow::{Context, Result};
 use serde_json::Value;
-use crate::canvas::Course;
+use std::collections::HashMap;
+use std::path::PathBuf;
 
 pub fn print_all_courses_by_term(courses: &[Course]) {
     let mut grouped_courses: HashMap<u32, Vec<&str>> = HashMap::new();

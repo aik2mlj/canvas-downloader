@@ -15,30 +15,30 @@ mod users;
 mod utils;
 mod videos;
 
+use std::path::PathBuf;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
 };
 use std::time::Duration;
-use std::{path::PathBuf};
 
 use anyhow::{Context, Result};
 use clap::Parser;
 use futures::future::ready;
 use futures::{stream, StreamExt, TryStreamExt};
-use indicatif::{ProgressStyle};
 use ignore::gitignore::GitignoreBuilder;
+use indicatif::ProgressStyle;
 
-use canvas::ProcessOptions;
 use api::get_pages;
-use files::{atomic_download_file, process_folders};
 use assignments::process_assignments;
+use canvas::ProcessOptions;
 use discussions::process_discussions;
+use files::{atomic_download_file, process_folders};
 use modules::process_modules;
 use pages::process_pages;
 use users::process_users;
-use videos::process_videos;
 use utils::{create_folder_if_not_exist, format_bytes, print_all_courses_by_term};
+use videos::process_videos;
 
 #[derive(Parser)]
 #[command(name = "Canvas Downloader")]
@@ -60,7 +60,10 @@ struct CommandLineOptions {
     verbose: bool,
 }
 
-fn load_ignore_file(ignore_file_path: &PathBuf, base_path: &PathBuf) -> Result<ignore::gitignore::Gitignore> {
+fn load_ignore_file(
+    ignore_file_path: &PathBuf,
+    base_path: &PathBuf,
+) -> Result<ignore::gitignore::Gitignore> {
     let mut builder = GitignoreBuilder::new(base_path);
     builder.add(ignore_file_path);
     builder
@@ -103,7 +106,10 @@ async fn main() -> Result<()> {
 
     // Load ignore file if provided
     let ignore_matcher = if let Some(ref ignore_file_path) = args.ignore_file {
-        Some(Arc::new(load_ignore_file(ignore_file_path, &args.destination_folder)?))
+        Some(Arc::new(load_ignore_file(
+            ignore_file_path,
+            &args.destination_folder,
+        )?))
     } else {
         None
     };
@@ -197,10 +203,7 @@ async fn main() -> Result<()> {
             options.clone()
         );
 
-        let course_api_link = format!(
-            "{}/api/v1/courses/{}/",
-            cred.canvas_url, course.id
-        );
+        let course_api_link = format!("{}/api/v1/courses/{}/", cred.canvas_url, course.id);
         fork!(
             process_data,
             (course_api_link, course_folder_path.clone()),
@@ -210,7 +213,11 @@ async fn main() -> Result<()> {
 
         fork!(
             process_videos,
-            (cred.canvas_url.clone(), course.id, course_folder_path.clone()),
+            (
+                cred.canvas_url.clone(),
+                course.id,
+                course_folder_path.clone()
+            ),
             (String, u32, PathBuf),
             options.clone()
         );
@@ -244,7 +251,14 @@ async fn main() -> Result<()> {
         } else {
             println!("  - Ignore file: none");
         }
-        println!("  - Download newer files: {}", if args.download_newer { "enabled" } else { "disabled" });
+        println!(
+            "  - Download newer files: {}",
+            if args.download_newer {
+                "enabled"
+            } else {
+                "disabled"
+            }
+        );
         println!();
 
         // Calculate total size
@@ -270,9 +284,14 @@ async fn main() -> Result<()> {
             );
         }
         println!();
-        println!("[DRY RUN] Total: {} file{} ({})",
+        println!(
+            "[DRY RUN] Total: {} file{} ({})",
             files_to_download.len(),
-            if files_to_download.len() == 1 { "" } else { "s" },
+            if files_to_download.len() == 1 {
+                ""
+            } else {
+                "s"
+            },
             format_bytes(total_size)
         );
     } else {
@@ -309,14 +328,17 @@ async fn main() -> Result<()> {
         println!(
             "Total: {} file{} ({})",
             files_to_download.len(),
-            if files_to_download.len() == 1 { "" } else { "s" },
+            if files_to_download.len() == 1 {
+                ""
+            } else {
+                "s"
+            },
             format_bytes(total_size)
         );
 
         // Ask for confirmation
         print!("Proceed with download? [y]/n: ");
-        std::io::Write::flush(&mut std::io::stdout())
-            .expect("Failed to flush stdout");
+        std::io::Write::flush(&mut std::io::stdout()).expect("Failed to flush stdout");
 
         let mut input = String::new();
         std::io::stdin()
@@ -358,10 +380,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn process_data(
-    (url, path): (String, PathBuf),
-    options: Arc<ProcessOptions>,
-) -> Result<()> {
+async fn process_data((url, path): (String, PathBuf), options: Arc<ProcessOptions>) -> Result<()> {
     let assignments_path = path.join("assignments");
     create_folder_if_not_exist(&assignments_path)?;
     fork!(

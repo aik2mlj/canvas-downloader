@@ -8,7 +8,7 @@ use crate::api::get_pages;
 use crate::canvas::ProcessOptions;
 use crate::utils::prettify_json;
 
-pub async fn process_users (
+pub async fn process_users(
     (url, path): (String, PathBuf),
     options: Arc<ProcessOptions>,
 ) -> Result<()> {

@@ -81,7 +81,9 @@ async fn download_file(
         .and_then(|ct_len| ct_len.to_str().ok()) // Unwraps the Option as &str
         .and_then(|ct_len| ct_len.parse().ok()) // Parses the Option as u64
         .unwrap_or(0); // Fallback to 0
-    let progress_bar = options.progress_bars.add(indicatif::ProgressBar::new(download_size));
+    let progress_bar = options
+        .progress_bars
+        .add(indicatif::ProgressBar::new(download_size));
     progress_bar.set_message(canvas_file.display_name.to_string());
     progress_bar.set_style(options.progress_style.clone());
 
@@ -167,7 +169,10 @@ pub async fn process_folders(
     Ok(())
 }
 
-pub async fn process_files((url, path): (String, PathBuf), options: Arc<ProcessOptions>) -> Result<()> {
+pub async fn process_files(
+    (url, path): (String, PathBuf),
+    options: Arc<ProcessOptions>,
+) -> Result<()> {
     let pages = get_pages(url, &options).await?;
 
     // For each page
@@ -206,8 +211,7 @@ pub async fn process_files((url, path): (String, PathBuf), options: Arc<ProcessO
 fn updated(filepath: &PathBuf, new_modified: &str) -> bool {
     (|| -> Result<bool> {
         let old_modified = std::fs::metadata(filepath)?.modified()?;
-        let new_modified =
-            std::time::SystemTime::from(DateTime::parse_from_rfc3339(new_modified)?);
+        let new_modified = std::time::SystemTime::from(DateTime::parse_from_rfc3339(new_modified)?);
         let updated = old_modified < new_modified;
         if updated {
             println!("Found update for {filepath:?}. Use -n to download updated files.");
@@ -218,7 +222,6 @@ fn updated(filepath: &PathBuf, new_modified: &str) -> bool {
 }
 
 pub fn filter_files(options: &ProcessOptions, path: &Path, files: Vec<File>) -> Vec<File> {
-
     // only download files that do not exist or are updated
     files
         .into_iter()
@@ -245,7 +248,9 @@ pub fn filter_files(options: &ProcessOptions, path: &Path, files: Vec<File>) -> 
             // Check if file matches ignore patterns
             if let Some(ref matcher) = options.ignore_matcher {
                 // Convert to relative path from the base directory for gitignore matching
-                let relative_path = f.filepath.strip_prefix(&options.ignore_base_path)
+                let relative_path = f
+                    .filepath
+                    .strip_prefix(&options.ignore_base_path)
                     .unwrap_or(&f.filepath);
                 let matched = matcher.matched_path_or_any_parents(relative_path, false);
                 if matched.is_ignore() {
@@ -283,7 +288,6 @@ pub async fn prepare_link_for_download(
     (link, path): (String, PathBuf),
     options: Arc<ProcessOptions>,
 ) -> Result<File> {
-
     let resp = options
         .client
         .head(&link)

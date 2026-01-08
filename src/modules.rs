@@ -40,12 +40,15 @@ pub async fn process_modules(
                     let pretty_json = prettify_json(&module_body).unwrap_or(module_body.clone());
                     module_file
                         .write_all(pretty_json.as_bytes())
-                        .with_context(|| format!("Unable to write to file for {:?}", module_json))?;
+                        .with_context(|| {
+                            format!("Unable to write to file for {:?}", module_json)
+                        })?;
                 }
 
                 for module in modules {
                     if let Some(ref modules_path) = modules_folder_path {
-                        let module_path = modules_path.join(sanitize_filename::sanitize(&module.name));
+                        let module_path =
+                            modules_path.join(sanitize_filename::sanitize(&module.name));
                         create_folder_if_not_exist(&module_path)?;
 
                         fork!(
@@ -100,10 +103,15 @@ async fn process_module_items(
                     match item.item_type.as_str() {
                         "File" => {
                             if let Some(content_id) = item.content_id {
-                                let file_url = format!("{}/api/v1/files/{}",
-                                    options.canvas_url.trim_end_matches('/'), content_id);
+                                let file_url = format!(
+                                    "{}/api/v1/files/{}",
+                                    options.canvas_url.trim_end_matches('/'),
+                                    content_id
+                                );
 
-                                match process_file_id((file_url, path.clone()), options.clone()).await {
+                                match process_file_id((file_url, path.clone()), options.clone())
+                                    .await
+                                {
                                     Ok(file) => {
                                         // Use filter_files to apply standard filtering logic
                                         let filtered = filter_files(&options, &path, vec![file]);
@@ -114,15 +122,21 @@ async fn process_module_items(
                                         }
                                     }
                                     Err(e) => {
-                                        eprintln!("Error processing module file {}: {:?}", content_id, e);
+                                        eprintln!(
+                                            "Error processing module file {}: {:?}",
+                                            content_id, e
+                                        );
                                     }
                                 }
                             }
                         }
                         "Page" => {
                             if let Some(page_url) = &item.page_url {
-                                let full_page_url = format!("{}pages/{}",
-                                    url.replace("/modules/", "/").replace("/items", ""), page_url);
+                                let full_page_url = format!(
+                                    "{}pages/{}",
+                                    url.replace("/modules/", "/").replace("/items", ""),
+                                    page_url
+                                );
                                 let item_path = path.join(sanitize_filename::sanitize(&item.title));
                                 create_folder_if_not_exist(&item_path)?;
 
@@ -148,7 +162,10 @@ async fn process_module_items(
                         }
                         "ExternalUrl" => {
                             if let Some(external_url) = &item.external_url {
-                                let url_file = path.join(format!("{}.url", sanitize_filename::sanitize(&item.title)));
+                                let url_file = path.join(format!(
+                                    "{}.url",
+                                    sanitize_filename::sanitize(&item.title)
+                                ));
                                 if let Ok(mut file) = std::fs::File::create(&url_file) {
                                     let _ = writeln!(file, "[InternetShortcut]");
                                     let _ = writeln!(file, "URL={}", external_url);
@@ -157,18 +174,24 @@ async fn process_module_items(
                         }
                         "SubHeader" => {
                             // SubHeaders are just organizational - create a folder
-                            let subheader_path = path.join(sanitize_filename::sanitize(&item.title));
+                            let subheader_path =
+                                path.join(sanitize_filename::sanitize(&item.title));
                             create_folder_if_not_exist(&subheader_path)?;
                         }
                         _ => {
-                            eprintln!("Unsupported module item type '{}' for item '{}'", item.item_type, item.title);
+                            eprintln!(
+                                "Unsupported module item type '{}' for item '{}'",
+                                item.item_type, item.title
+                            );
                         }
                     }
                 }
             }
 
             Ok(ModuleItemResult::Err { status }) => {
-                eprintln!("Failed to access module items at link:{url}, path:{path:?}, status:{status}");
+                eprintln!(
+                    "Failed to access module items at link:{url}, path:{path:?}, status:{status}"
+                );
             }
 
             Ok(ModuleItemResult::Empty(_)) => {
