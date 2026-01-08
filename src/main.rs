@@ -272,8 +272,9 @@ async fn main() -> Result<()> {
         // Calculate total size
         let total_size: u64 = files_to_download.iter().map(|f| f.size).sum();
 
+        // Display files to be downloaded
         println!(
-            "Downloading {} file{} ({})",
+            "Will download {} file{} ({}):",
             files_to_download.len(),
             if files_to_download.len() == 1 {
                 ""
@@ -282,6 +283,40 @@ async fn main() -> Result<()> {
             },
             format_bytes(total_size)
         );
+        println!();
+        for canvas_file in files_to_download.iter() {
+            println!(
+                "  {} ({})",
+                canvas_file.filepath.to_string_lossy(),
+                format_bytes(canvas_file.size)
+            );
+        }
+        println!();
+        println!(
+            "Total: {} file{} ({})",
+            files_to_download.len(),
+            if files_to_download.len() == 1 { "" } else { "s" },
+            format_bytes(total_size)
+        );
+
+        // Ask for confirmation
+        print!("Proceed with download? [y]/n: ");
+        std::io::Write::flush(&mut std::io::stdout())
+            .expect("Failed to flush stdout");
+
+        let mut input = String::new();
+        std::io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read user input");
+
+        let input = input.trim().to_lowercase();
+        if !input.is_empty() && input != "y" && input != "yes" {
+            println!("Download cancelled.");
+            return Ok(());
+        }
+
+        println!();
+        println!("Starting download...");
 
         // Download files
         options.n_active_requests.fetch_add(1, Ordering::AcqRel); // prevent notifying until all spawned
@@ -304,15 +339,6 @@ async fn main() -> Result<()> {
         // Sanity check: running tasks trying to acquire sem will panic
         options.sem_requests.close();
         assert_eq!(options.n_active_requests.load(Ordering::Acquire), 0);
-
-        for canvas_file in files_to_download.iter() {
-            println!(
-                "Downloaded {} to {} ({})",
-                canvas_file.display_name,
-                canvas_file.filepath.to_string_lossy(),
-                format_bytes(canvas_file.size)
-            );
-        }
     }
 
     Ok(())
