@@ -248,6 +248,7 @@ pub struct ProcessOptions {
     pub ignore_matcher: Option<std::sync::Arc<ignore::gitignore::Gitignore>>,
     pub ignore_base_path: std::path::PathBuf,
     pub dry_run: bool,
+    pub verbose: bool,
     // Download
     pub progress_bars: indicatif::MultiProgress,
     pub progress_style: indicatif::ProgressStyle,

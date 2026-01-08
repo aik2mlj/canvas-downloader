@@ -56,6 +56,8 @@ struct CommandLineOptions {
     ignore_file: Option<PathBuf>,
     #[arg(long)]
     dry_run: bool,
+    #[arg(short = 'v', long)]
+    verbose: bool,
 }
 
 fn load_ignore_file(ignore_file_path: &PathBuf, base_path: &PathBuf) -> Result<ignore::gitignore::Gitignore> {
@@ -117,6 +119,7 @@ async fn main() -> Result<()> {
         ignore_matcher,
         ignore_base_path: args.destination_folder.clone(),
         dry_run: args.dry_run,
+        verbose: args.verbose,
         // Download
         progress_bars: indicatif::MultiProgress::new(),
         progress_style: {
@@ -230,6 +233,11 @@ async fn main() -> Result<()> {
 
     if args.dry_run {
         // Dry run mode: just display what would be downloaded
+        if files_to_download.is_empty() {
+            println!("[DRY RUN] No files to download.");
+            return Ok(());
+        }
+
         println!("[DRY RUN] Active filters:");
         if let Some(ref ignore_file_path) = args.ignore_file {
             println!("  - Ignore file: {}", ignore_file_path.display());
@@ -271,6 +279,12 @@ async fn main() -> Result<()> {
         // Normal mode: actually download files
         // Calculate total size
         let total_size: u64 = files_to_download.iter().map(|f| f.size).sum();
+
+        // Check if there are no files to download
+        if files_to_download.is_empty() {
+            println!("No files to download.");
+            return Ok(());
+        }
 
         // Display files to be downloaded
         println!(

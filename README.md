@@ -44,6 +44,7 @@ Options:
   -t, --term-ids <ID>...
   -i, --ignore-file <FILE>
       --dry-run
+  -v, --verbose
   -h, --help                         Print help
   -V, --version                      Print version
 ```
@@ -52,6 +53,7 @@ Options:
 - If you want to ignore certain files from being downloaded, use `--ignore-file` or `-i` with a path to an ignore file. The ignore file uses `.gitignore` pattern syntax. See `.canvasignore.example` for examples.
 - If you want to see what files would be downloaded without actually downloading them, use `--dry-run`. This will display all files that would be downloaded with their download URLs and target paths in the format `download_url -> target_path`, along with the total count. The dry run respects all filtering options including `--ignore-file` and `--download-newer`, and displays which filters are active.
 - Before downloading, the tool displays all target file paths and sizes, then asks for confirmation. Press Enter or type 'y' to proceed, or 'n' to cancel.
+- If you want to see additional informational messages (like "No Panopto videos found", "No pages found", rate limiting retries, or access denied warnings), use `--verbose` or `-v`.
 
 ### Note for macOS
 - To use the executable downloaded from **Releases**, use `xattr` to remove the quarantine

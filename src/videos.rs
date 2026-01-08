@@ -42,8 +42,19 @@ pub async fn process_videos(
         let panopto_form = panopto_document
             .find(Name("form"))
             .filter(|n| n.attr("data-tool-id") == Some("mediaweb.ap.panopto.com"))
-            .next()
-            .ok_or(anyhow!("Could not find panopto form"))?;
+            .next();
+
+        // If no Panopto form found, course doesn't use Panopto
+        let panopto_form = match panopto_form {
+            Some(form) => form,
+            None => {
+                if options.verbose {
+                    println!("No Panopto videos found for course");
+                }
+                return Ok(());
+            }
+        };
+
         let action = panopto_form
             .attr("action")
             .ok_or(anyhow!("Could not find panopto form action"))?

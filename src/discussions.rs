@@ -82,12 +82,16 @@ pub async fn process_discussions(
                 }
             }
             Ok(DiscussionResult::Err { status }) => {
-                eprintln!(
-                    "Failed to access discussions at link:{uri}, path:{path:?}, status:{status}",
-                );
+                if options.verbose {
+                    println!(
+                        "Failed to access discussions at link:{uri}, path:{path:?}, status:{status}",
+                    );
+                }
             }
             Err(e) => {
-                eprintln!("Error when getting discussions at link:{uri}, path:{path:?}\n{e:?}",);
+                if options.verbose {
+                    println!("Error when getting discussions at link:{uri}, path:{path:?}\n{e:?}",);
+                }
             }
         }
     }

@@ -60,15 +60,21 @@ pub async fn process_pages(
             }
 
             Ok(PageResult::Err { status }) => {
-                eprintln!("No pages found for url {} status: {}", uri, status);
+                if options.verbose {
+                    println!("No pages found for url {} (status: {})", uri, status);
+                }
             }
 
             Ok(PageResult::Empty(_)) => {
-                eprintln!("No pages found for url {} (empty response)", uri);
+                if options.verbose {
+                    println!("No pages found for url {} (empty response)", uri);
+                }
             }
 
             Err(e) => {
-                eprintln!("No pages found for url {} error: {}", uri, e);
+                if options.verbose {
+                    println!("No pages found for url {} (error: {})", uri, e);
+                }
             }
         };
     }
