@@ -249,7 +249,9 @@ pub fn filter_files(options: &ProcessOptions, path: &Path, files: Vec<File>) -> 
                     .unwrap_or(&f.filepath);
                 let matched = matcher.matched_path_or_any_parents(relative_path, false);
                 if matched.is_ignore() {
-                    println!("Ignoring file (matched ignore pattern): {}", f.filepath.display());
+                    if options.verbose {
+                        println!("Ignoring file: {}", f.filepath.display());
+                    }
                     return false;
                 }
             }
