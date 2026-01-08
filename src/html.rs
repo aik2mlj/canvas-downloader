@@ -17,7 +17,7 @@ pub async fn process_html_links(
 ) -> Result<()> {
 
     // If file link is part of course files
-    let re = Regex::new(r"/courses/[0-9]+/files/[0-9]+").unwrap();
+    let re = Regex::new(r"/courses/[0-9]+/files/([0-9]+)").unwrap();
     let file_links = Document::from(html.as_str())
         .find(Name("a"))
         .filter_map(|n| n.attr("href"))
@@ -26,7 +26,12 @@ pub async fn process_html_links(
         .filter(|x| x.is_ok())
         .map(|x| x.unwrap())
         .filter(|x| re.is_match(x.path()))
-        .map(|x| format!("{}/api/v1{}", options.canvas_url, x.path()))
+        .filter_map(|x| {
+            // Extract file ID and use the correct Canvas API endpoint
+            re.captures(x.path())
+                .and_then(|cap| cap.get(1))
+                .map(|file_id| format!("{}/api/v1/files/{}", options.canvas_url, file_id.as_str()))
+        })
         .collect::<Vec<String>>();
 
     let mut link_files = join_all(file_links.into_iter()
