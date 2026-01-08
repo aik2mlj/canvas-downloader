@@ -38,7 +38,7 @@ use modules::process_modules;
 use pages::process_pages;
 use users::process_users;
 use videos::process_videos;
-use utils::{create_folder_if_not_exist, print_all_courses_by_term};
+use utils::{create_folder_if_not_exist, format_bytes, print_all_courses_by_term};
 
 #[derive(Parser)]
 #[command(name = "Canvas Downloader")]
@@ -238,38 +238,49 @@ async fn main() -> Result<()> {
         }
         println!("  - Download newer files: {}", if args.download_newer { "enabled" } else { "disabled" });
         println!();
+
+        // Calculate total size
+        let total_size: u64 = files_to_download.iter().map(|f| f.size).sum();
+
         println!(
-            "[DRY RUN] Would download {} file{}:",
+            "[DRY RUN] Would download {} file{} ({}):",
             files_to_download.len(),
             if files_to_download.len() == 1 {
                 ""
             } else {
                 "s"
-            }
+            },
+            format_bytes(total_size)
         );
         println!();
         for canvas_file in files_to_download.iter() {
             println!(
-                "  {} -> {}",
+                "  {} -> {} ({})",
                 canvas_file.url,
-                canvas_file.filepath.to_string_lossy()
+                canvas_file.filepath.to_string_lossy(),
+                format_bytes(canvas_file.size)
             );
         }
         println!();
-        println!("[DRY RUN] Total: {} file{}",
+        println!("[DRY RUN] Total: {} file{} ({})",
             files_to_download.len(),
-            if files_to_download.len() == 1 { "" } else { "s" }
+            if files_to_download.len() == 1 { "" } else { "s" },
+            format_bytes(total_size)
         );
     } else {
         // Normal mode: actually download files
+        // Calculate total size
+        let total_size: u64 = files_to_download.iter().map(|f| f.size).sum();
+
         println!(
-            "Downloading {} file{}",
+            "Downloading {} file{} ({})",
             files_to_download.len(),
             if files_to_download.len() == 1 {
                 ""
             } else {
                 "s"
-            }
+            },
+            format_bytes(total_size)
         );
 
         // Download files
@@ -296,9 +307,10 @@ async fn main() -> Result<()> {
 
         for canvas_file in files_to_download.iter() {
             println!(
-                "Downloaded {} to {}",
+                "Downloaded {} to {} ({})",
                 canvas_file.display_name,
-                canvas_file.filepath.to_string_lossy()
+                canvas_file.filepath.to_string_lossy(),
+                format_bytes(canvas_file.size)
             );
         }
     }
