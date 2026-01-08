@@ -11,6 +11,7 @@ chrono = ">=0.4"
 clap = { version = ">=3.0", features = ["derive"] }
 filetime = ">=0.2"
 futures = ">=0.3"
+ignore = ">=0.4"
 indicatif = ">=0.17"
 m3u8-rs = "5.0.4"
 num_cpus = ">=1"

@@ -27,6 +27,7 @@ use clap::Parser;
 use futures::future::ready;
 use futures::{stream, StreamExt, TryStreamExt};
 use indicatif::{ProgressStyle};
+use ignore::gitignore::GitignoreBuilder;
 
 use canvas::ProcessOptions;
 use api::get_pages;
@@ -51,6 +52,16 @@ struct CommandLineOptions {
     download_newer: bool,
     #[arg(short = 't', long, value_name = "ID", num_args(1..))]
     term_ids: Option<Vec<u32>>,
+    #[arg(short = 'i', long, value_name = "FILE")]
+    ignore_file: Option<PathBuf>,
+}
+
+fn load_ignore_file(ignore_file_path: &PathBuf) -> Result<ignore::gitignore::Gitignore> {
+    let mut builder = GitignoreBuilder::new("");
+    builder.add(ignore_file_path);
+    builder
+        .build()
+        .with_context(|| format!("Failed to parse ignore file: {:?}", ignore_file_path))
 }
 
 #[tokio::main]
@@ -85,6 +96,14 @@ async fn main() -> Result<()> {
         .await
         .with_context(|| "Failed to get user info")?;
     let courses_link = format!("{}/api/v1/users/self/favorites/courses", cred.canvas_url);
+
+    // Load ignore file if provided
+    let ignore_matcher = if let Some(ref ignore_file_path) = args.ignore_file {
+        Some(Arc::new(load_ignore_file(ignore_file_path)?))
+    } else {
+        None
+    };
+
     let options = Arc::new(ProcessOptions {
         canvas_token: cred.canvas_token.clone(),
         canvas_url: cred.canvas_url.clone(),
@@ -93,6 +112,7 @@ async fn main() -> Result<()> {
         // Process
         files_to_download: tokio::sync::Mutex::new(Vec::new()),
         download_newer: args.download_newer,
+        ignore_matcher,
         // Download
         progress_bars: indicatif::MultiProgress::new(),
         progress_style: {

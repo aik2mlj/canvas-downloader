@@ -241,6 +241,17 @@ pub fn filter_files(options: &ProcessOptions, path: &Path, files: Vec<File>) -> 
         .filter(|f| {
             !f.filepath.exists() || (updated(&f.filepath, &f.updated_at) && options.download_newer)
         })
+        .filter(|f| {
+            // Check if file matches ignore patterns
+            if let Some(ref matcher) = options.ignore_matcher {
+                let matched = matcher.matched(&f.filepath, false);
+                if matched.is_ignore() {
+                    println!("Ignoring file (matched ignore pattern): {}", f.filepath.display());
+                    return false;
+                }
+            }
+            true
+        })
         .collect()
 }
 

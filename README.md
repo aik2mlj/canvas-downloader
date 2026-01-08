@@ -38,15 +38,17 @@ $ canvas-downloader --help
 Usage: canvas-downloader [OPTIONS] --credential-file <FILE>
 
 Options:
-  -c, --credential-file <FILE>       
+  -c, --credential-file <FILE>
   -d, --destination-folder <FOLDER>  [default: .]
-  -n, --download-newer               
-  -t, --term-ids <ID>...             
+  -n, --download-newer
+  -t, --term-ids <ID>...
+  -i, --ignore-file <FILE>
   -h, --help                         Print help
   -V, --version                      Print version
 ```
-- If you want to download files updated on canvas, use `--download-newer` or `-n`. By default, files updated on canvas will not overwrite already downloaded files. 
+- If you want to download files updated on canvas, use `--download-newer` or `-n`. By default, files updated on canvas will not overwrite already downloaded files.
 - If you want to specify where to download files into, use `--destination-folder` or `-d`. By default, files will be downloaded to the folder in which the program is called.
+- If you want to ignore certain files from being downloaded, use `--ignore-file` or `-i` with a path to an ignore file. The ignore file uses `.gitignore` pattern syntax. See `.canvasignore.example` for examples.
 
 ### Note for macOS
 - To use the executable downloaded from **Releases**, use `xattr` to remove the quarantine
