@@ -43,12 +43,14 @@ Options:
   -n, --download-newer
   -t, --term-ids <ID>...
   -i, --ignore-file <FILE>
+      --dry-run
   -h, --help                         Print help
   -V, --version                      Print version
 ```
 - If you want to download files updated on canvas, use `--download-newer` or `-n`. By default, files updated on canvas will not overwrite already downloaded files.
 - If you want to specify where to download files into, use `--destination-folder` or `-d`. By default, files will be downloaded to the folder in which the program is called.
 - If you want to ignore certain files from being downloaded, use `--ignore-file` or `-i` with a path to an ignore file. The ignore file uses `.gitignore` pattern syntax. See `.canvasignore.example` for examples.
+- If you want to see what files would be downloaded without actually downloading them, use `--dry-run`. This will display all files that would be downloaded with their download URLs and target paths in the format `download_url -> target_path`, along with the total count. The dry run respects all filtering options including `--ignore-file` and `--download-newer`, and displays which filters are active.
 
 ### Note for macOS
 - To use the executable downloaded from **Releases**, use `xattr` to remove the quarantine

@@ -54,6 +54,8 @@ struct CommandLineOptions {
     term_ids: Option<Vec<u32>>,
     #[arg(short = 'i', long, value_name = "FILE")]
     ignore_file: Option<PathBuf>,
+    #[arg(long)]
+    dry_run: bool,
 }
 
 fn load_ignore_file(ignore_file_path: &PathBuf) -> Result<ignore::gitignore::Gitignore> {
@@ -113,6 +115,7 @@ async fn main() -> Result<()> {
         files_to_download: tokio::sync::Mutex::new(Vec::new()),
         download_newer: args.download_newer,
         ignore_matcher,
+        dry_run: args.dry_run,
         // Download
         progress_bars: indicatif::MultiProgress::new(),
         progress_style: {
@@ -223,44 +226,80 @@ async fn main() -> Result<()> {
     println!();
 
     let files_to_download = options.files_to_download.lock().await;
-    println!(
-        "Downloading {} file{}",
-        files_to_download.len(),
-        if files_to_download.len() == 1 {
-            ""
+
+    if args.dry_run {
+        // Dry run mode: just display what would be downloaded
+        println!("[DRY RUN] Active filters:");
+        if let Some(ref ignore_file_path) = args.ignore_file {
+            println!("  - Ignore file: {}", ignore_file_path.display());
         } else {
-            "s"
+            println!("  - Ignore file: none");
         }
-    );
-
-    // Download files
-    options.n_active_requests.fetch_add(1, Ordering::AcqRel); // prevent notifying until all spawned
-    for canvas_file in files_to_download.iter() {
-        fork!(
-            atomic_download_file,
-            canvas_file.clone(),
-            canvas::File,
-            options.clone()
-        );
-    }
-
-    // Wait for downloads
-    let new_val = options.n_active_requests.fetch_sub(1, Ordering::AcqRel) - 1;
-    if new_val == 0 {
-        // notify if all finished immediately
-        options.notify_main.notify_one();
-    }
-    options.notify_main.notified().await;
-    // Sanity check: running tasks trying to acquire sem will panic
-    options.sem_requests.close();
-    assert_eq!(options.n_active_requests.load(Ordering::Acquire), 0);
-
-    for canvas_file in files_to_download.iter() {
+        println!("  - Download newer files: {}", if args.download_newer { "enabled" } else { "disabled" });
+        println!();
         println!(
-            "Downloaded {} to {}",
-            canvas_file.display_name,
-            canvas_file.filepath.to_string_lossy()
+            "[DRY RUN] Would download {} file{}:",
+            files_to_download.len(),
+            if files_to_download.len() == 1 {
+                ""
+            } else {
+                "s"
+            }
         );
+        println!();
+        for canvas_file in files_to_download.iter() {
+            println!(
+                "  {} -> {}",
+                canvas_file.url,
+                canvas_file.filepath.to_string_lossy()
+            );
+        }
+        println!();
+        println!("[DRY RUN] Total: {} file{}",
+            files_to_download.len(),
+            if files_to_download.len() == 1 { "" } else { "s" }
+        );
+    } else {
+        // Normal mode: actually download files
+        println!(
+            "Downloading {} file{}",
+            files_to_download.len(),
+            if files_to_download.len() == 1 {
+                ""
+            } else {
+                "s"
+            }
+        );
+
+        // Download files
+        options.n_active_requests.fetch_add(1, Ordering::AcqRel); // prevent notifying until all spawned
+        for canvas_file in files_to_download.iter() {
+            fork!(
+                atomic_download_file,
+                canvas_file.clone(),
+                canvas::File,
+                options.clone()
+            );
+        }
+
+        // Wait for downloads
+        let new_val = options.n_active_requests.fetch_sub(1, Ordering::AcqRel) - 1;
+        if new_val == 0 {
+            // notify if all finished immediately
+            options.notify_main.notify_one();
+        }
+        options.notify_main.notified().await;
+        // Sanity check: running tasks trying to acquire sem will panic
+        options.sem_requests.close();
+        assert_eq!(options.n_active_requests.load(Ordering::Acquire), 0);
+
+        for canvas_file in files_to_download.iter() {
+            println!(
+                "Downloaded {} to {}",
+                canvas_file.display_name,
+                canvas_file.filepath.to_string_lossy()
+            );
+        }
     }
 
     Ok(())
