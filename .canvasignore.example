@@ -21,8 +21,5 @@ lecture-recordings/
 syllabus.docx
 README.txt
 
-# Ignore everything in a specific folder recursively
-/CS2030S/**
-
 # Use ! to negate a pattern (whitelist specific files)
 # !important.pdf
