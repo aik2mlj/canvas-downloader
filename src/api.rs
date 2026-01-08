@@ -89,7 +89,7 @@ pub async fn get_canvas_api(url: String, options: &ProcessOptions) -> Result<Res
         // Exponential backoff with jitter: base delay * 2^retry + random jitter
         let base_delay = 500; // 500ms base delay
         let exponential_delay = base_delay * 2_u64.pow(retry);
-        let jitter = rand::thread_rng().gen_range(0..=exponential_delay / 2);
+        let jitter = rand::rng().random_range(0..=exponential_delay / 2);
         let wait_time = Duration::from_millis(exponential_delay + jitter);
 
         if options.verbose {

@@ -15,7 +15,6 @@ use serde_json::json;
 use crate::api::get_canvas_api;
 use crate::canvas::{File, PanoptoDeliveryInfo, PanoptoSessionInfo, ProcessOptions, Session};
 use crate::files::filter_files;
-use crate::fork;
 use crate::utils::create_folder_if_not_exist;
 
 pub async fn process_videos(
