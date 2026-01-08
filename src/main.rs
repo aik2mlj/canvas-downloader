@@ -89,6 +89,7 @@ async fn main() -> Result<()> {
 
     // Prepare GET request options
     let client = reqwest::ClientBuilder::new()
+        .user_agent("canvas-downloader/0.2.2")
         .tcp_keepalive(Some(Duration::from_secs(10)))
         .http2_keep_alive_interval(Some(Duration::from_secs(2)))
         .build()
