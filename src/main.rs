@@ -58,8 +58,8 @@ struct CommandLineOptions {
     dry_run: bool,
 }
 
-fn load_ignore_file(ignore_file_path: &PathBuf) -> Result<ignore::gitignore::Gitignore> {
-    let mut builder = GitignoreBuilder::new("");
+fn load_ignore_file(ignore_file_path: &PathBuf, base_path: &PathBuf) -> Result<ignore::gitignore::Gitignore> {
+    let mut builder = GitignoreBuilder::new(base_path);
     builder.add(ignore_file_path);
     builder
         .build()
@@ -101,7 +101,7 @@ async fn main() -> Result<()> {
 
     // Load ignore file if provided
     let ignore_matcher = if let Some(ref ignore_file_path) = args.ignore_file {
-        Some(Arc::new(load_ignore_file(ignore_file_path)?))
+        Some(Arc::new(load_ignore_file(ignore_file_path, &args.destination_folder)?))
     } else {
         None
     };
@@ -115,6 +115,7 @@ async fn main() -> Result<()> {
         files_to_download: tokio::sync::Mutex::new(Vec::new()),
         download_newer: args.download_newer,
         ignore_matcher,
+        ignore_base_path: args.destination_folder.clone(),
         dry_run: args.dry_run,
         // Download
         progress_bars: indicatif::MultiProgress::new(),

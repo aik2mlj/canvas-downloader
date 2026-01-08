@@ -244,7 +244,10 @@ pub fn filter_files(options: &ProcessOptions, path: &Path, files: Vec<File>) -> 
         .filter(|f| {
             // Check if file matches ignore patterns
             if let Some(ref matcher) = options.ignore_matcher {
-                let matched = matcher.matched(&f.filepath, false);
+                // Convert to relative path from the base directory for gitignore matching
+                let relative_path = f.filepath.strip_prefix(&options.ignore_base_path)
+                    .unwrap_or(&f.filepath);
+                let matched = matcher.matched(relative_path, false);
                 if matched.is_ignore() {
                     println!("Ignoring file (matched ignore pattern): {}", f.filepath.display());
                     return false;

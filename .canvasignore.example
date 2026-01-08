@@ -1,10 +1,15 @@
 # Example ignore file for canvas-downloader
 # Follows .gitignore pattern syntax
+# Patterns are matched relative to the destination folder (-d option)
 
 # Ignore all PDF files
 *.pdf
 
-# Ignore all files in a specific folder
+# Ignore a specific course folder (using leading slash for exact match from root)
+/CS1101S/
+/W26-MUSIC-251-01/
+
+# Ignore all files in a specific subfolder
 lecture-recordings/
 
 # Ignore specific file types
@@ -15,6 +20,9 @@ lecture-recordings/
 # Ignore files with specific names
 syllabus.docx
 README.txt
+
+# Ignore everything in a specific folder recursively
+/CS2030S/**
 
 # Use ! to negate a pattern (whitelist specific files)
 # !important.pdf
