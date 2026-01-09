@@ -11,6 +11,7 @@ mod files;
 mod html;
 mod modules;
 mod pages;
+mod syllabus;
 mod users;
 mod utils;
 mod videos;
@@ -36,6 +37,7 @@ use discussions::process_discussions;
 use files::{atomic_download_file, process_folders};
 use modules::process_modules;
 use pages::process_pages;
+use syllabus::process_syllabus;
 use users::process_users;
 use utils::{create_folder_if_not_exist, format_bytes, print_all_courses_by_term};
 use videos::process_videos;
@@ -207,8 +209,8 @@ async fn main() -> Result<()> {
         let course_api_link = format!("{}/api/v1/courses/{}/", cred.canvas_url, course.id);
         fork!(
             process_data,
-            (course_api_link, course_folder_path.clone()),
-            (String, PathBuf),
+            (course_api_link, course.id, course_folder_path.clone()),
+            (String, u32, PathBuf),
             options.clone()
         );
 
@@ -381,7 +383,10 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn process_data((url, path): (String, PathBuf), options: Arc<ProcessOptions>) -> Result<()> {
+async fn process_data(
+    (url, course_id, path): (String, u32, PathBuf),
+    options: Arc<ProcessOptions>,
+) -> Result<()> {
     let assignments_path = path.join("assignments");
     create_folder_if_not_exist(&assignments_path)?;
     fork!(
@@ -419,6 +424,12 @@ async fn process_data((url, path): (String, PathBuf), options: Arc<ProcessOption
         process_modules,
         (url.clone(), path.clone()),
         (String, PathBuf),
+        options.clone()
+    );
+    fork!(
+        process_syllabus,
+        (course_id, path.clone()),
+        (u32, PathBuf),
         options.clone()
     );
     Ok(())

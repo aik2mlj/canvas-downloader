@@ -237,6 +237,14 @@ pub struct ModuleItem {
     pub completion_requirement: Option<serde_json::Value>,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+pub struct Syllabus {
+    pub id: u32,
+    pub name: String,
+    pub course_code: String,
+    pub syllabus_body: Option<String>,
+}
+
 pub struct ProcessOptions {
     pub canvas_token: String,
     pub canvas_url: String,
