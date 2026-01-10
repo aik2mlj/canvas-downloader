@@ -5,7 +5,7 @@ use std::sync::Arc;
 use anyhow::{Context, Result};
 
 use crate::api::{get_canvas_api, get_pages};
-use crate::canvas::{AssignmentResult, ProcessOptions, Submission};
+use crate::canvas::{Assignment, AssignmentResult, ProcessOptions, Submission};
 use crate::files::filter_files;
 use crate::html::process_html_links;
 use crate::utils::{create_folder_if_not_exist, prettify_json};
@@ -35,19 +35,19 @@ pub async fn process_assignments(
         match assignment_result {
             Ok(AssignmentResult::Ok(assignments)) | Ok(AssignmentResult::Direct(assignments)) => {
                 for assignment in assignments {
-                    let assignment_path = path.join(sanitize_filename::sanitize(assignment.name));
+                    let assignment_path = path.join(sanitize_filename::sanitize(&assignment.name));
                     create_folder_if_not_exist(&assignment_path)?;
                     let submissions_url =
                         format!("{}assignments/{}/submissions/", url, assignment.id);
                     fork!(
                         process_submissions,
-                        (submissions_url, assignment_path.clone()),
-                        (String, PathBuf),
+                        (submissions_url, assignment_path.clone(), assignment.clone()),
+                        (String, PathBuf, Assignment),
                         options.clone()
                     );
                     fork!(
                         process_html_links,
-                        (assignment.description, assignment_path),
+                        (assignment.description.clone(), assignment_path),
                         (String, PathBuf),
                         options.clone()
                     );
@@ -69,8 +69,90 @@ pub async fn process_assignments(
     Ok(())
 }
 
+fn generate_assignment_html(assignment: &Assignment) -> String {
+    let mut html = String::new();
+
+    html.push_str("<!DOCTYPE html>\n<html>\n<head>\n");
+    html.push_str("    <meta charset=\"UTF-8\">\n");
+    html.push_str(&format!(
+        "    <title>{}</title>\n",
+        html_escape(&assignment.name)
+    ));
+    html.push_str(r#"    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; padding: 0 20px; }
+        .assignment-header { background: #f9f9f9; border-left: 4px solid #2196F3; padding: 20px; margin-bottom: 30px; }
+        .assignment-title { font-size: 24px; font-weight: bold; margin-bottom: 15px; }
+        .assignment-meta { color: #666; font-size: 14px; margin-bottom: 10px; }
+        .assignment-meta-label { font-weight: bold; display: inline-block; min-width: 140px; }
+        .assignment-description { line-height: 1.6; margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; }
+        .submission-types { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+        .submission-type { background: #e3f2fd; padding: 4px 8px; border-radius: 4px; font-size: 13px; }
+    </style>
+"#);
+    html.push_str("</head>\n<body>\n");
+
+    // Assignment header
+    html.push_str("    <div class=\"assignment-header\">\n");
+    html.push_str(&format!(
+        "        <div class=\"assignment-title\">{}</div>\n",
+        html_escape(&assignment.name)
+    ));
+
+    // Created date
+    if let Some(ref created_at) = assignment.created_at {
+        html.push_str("        <div class=\"assignment-meta\">\n");
+        html.push_str("            <span class=\"assignment-meta-label\">Created:</span>\n");
+        html.push_str(&format!("            {}\n", html_escape(created_at)));
+        html.push_str("        </div>\n");
+    }
+
+    // Due date
+    if let Some(ref due_at) = assignment.due_at {
+        html.push_str("        <div class=\"assignment-meta\">\n");
+        html.push_str("            <span class=\"assignment-meta-label\">Due:</span>\n");
+        html.push_str(&format!("            {}\n", html_escape(due_at)));
+        html.push_str("        </div>\n");
+    }
+
+    // Submission types
+    if let Some(ref submission_types) = assignment.submission_types {
+        if !submission_types.is_empty() {
+            html.push_str("        <div class=\"assignment-meta\">\n");
+            html.push_str(
+                "            <span class=\"assignment-meta-label\">Submission Types:</span>\n",
+            );
+            html.push_str("            <div class=\"submission-types\">\n");
+            for submission_type in submission_types {
+                html.push_str(&format!(
+                    "                <span class=\"submission-type\">{}</span>\n",
+                    html_escape(submission_type)
+                ));
+            }
+            html.push_str("            </div>\n");
+            html.push_str("        </div>\n");
+        }
+    }
+
+    // Description
+    html.push_str("        <div class=\"assignment-description\">\n");
+    html.push_str(&format!("            {}\n", &assignment.description));
+    html.push_str("        </div>\n");
+    html.push_str("    </div>\n");
+
+    html.push_str("</body>\n</html>");
+    html
+}
+
+fn html_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
 async fn process_submissions(
-    (url, path): (String, PathBuf),
+    (url, path, assignment): (String, PathBuf, Assignment),
     options: Arc<ProcessOptions>,
 ) -> Result<()> {
     let submissions_url = format!("{}{}", url, options.user.id);
@@ -97,5 +179,15 @@ async fn process_submissions(
             eprintln!("Error when getting submissions at link:{url}, path:{path:?}\n{e:?}",);
         }
     }
+
+    // Generate HTML file for the assignment
+    let html_content = generate_assignment_html(&assignment);
+    let html_path = path.join("assignment.html");
+    let mut html_file = std::fs::File::create(html_path.clone())
+        .with_context(|| format!("Unable to create file for {:?}", html_path))?;
+    html_file
+        .write_all(html_content.as_bytes())
+        .with_context(|| format!("Could not write to file {:?}", html_path))?;
+
     Ok(())
 }

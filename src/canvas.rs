@@ -89,11 +89,14 @@ pub(crate) enum AssignmentResult {
     // Handle empty response or any other format
     Empty(Option<serde_json::Value>),
 }
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Assignment {
     pub id: u32,
     pub name: String,
     pub description: String,
+    pub created_at: Option<String>,
+    pub due_at: Option<String>,
+    pub submission_types: Option<Vec<String>>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
