@@ -33,7 +33,7 @@ pub async fn process_videos(
 
     // Need a new client for each session for the cookie store
     let client = reqwest::ClientBuilder::new()
-        .user_agent("canvas-downloader/0.3.0")
+        .user_agent("canvas-downloader/0.3.1")
         .cookie_store(true)
         .build()?;
     let videos = client.get(session_result.session_url).send().await?;
