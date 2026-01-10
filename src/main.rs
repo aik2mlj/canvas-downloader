@@ -90,8 +90,9 @@ async fn main() -> Result<()> {
     }
 
     // Prepare GET request options
+    let user_agent = format!("{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
     let client = reqwest::ClientBuilder::new()
-        .user_agent("canvas-downloader/0.3.1")
+        .user_agent(user_agent)
         .tcp_keepalive(Some(Duration::from_secs(10)))
         .http2_keep_alive_interval(Some(Duration::from_secs(2)))
         .build()
