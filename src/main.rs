@@ -106,7 +106,7 @@ async fn main() -> Result<()> {
         .json::<canvas::User>()
         .await
         .with_context(|| "Failed to get user info")?;
-    let courses_link = format!("{}/api/v1/users/self/favorites/courses", cred.canvas_url);
+    let courses_link = format!("{}/api/v1/users/self/courses", cred.canvas_url);
 
     // Load ignore file if provided
     let ignore_matcher = if let Some(ref ignore_file_path) = args.ignore_file {
