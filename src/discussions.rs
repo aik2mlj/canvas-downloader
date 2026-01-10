@@ -5,7 +5,7 @@ use std::sync::Arc;
 use anyhow::{Context, Result};
 
 use crate::api::{get_canvas_api, get_pages};
-use crate::canvas::{DiscussionResult, DiscussionView, ProcessOptions};
+use crate::canvas::{Discussion, DiscussionResult, DiscussionView, ProcessOptions};
 use crate::files::filter_files;
 use crate::html::process_html_links;
 use crate::utils::{create_folder_if_not_exist, prettify_json};
@@ -68,12 +68,13 @@ pub async fn process_discussions(
                         let discussion_folder_path = folder_path.join(format!(
                             "{}_{}",
                             discussion.id,
-                            sanitize_filename::sanitize(discussion.title)
+                            sanitize_filename::sanitize(&discussion.title)
                         ));
                         create_folder_if_not_exist(&discussion_folder_path)?;
 
                         let files = discussion
                             .attachments
+                            .clone()
                             .into_iter()
                             .map(|mut f| {
                                 f.display_name = format!("{}_{}", f.id, &f.display_name);
@@ -89,15 +90,15 @@ pub async fn process_discussions(
 
                         fork!(
                             process_html_links,
-                            (discussion.message, discussion_folder_path.clone()),
+                            (discussion.message.clone(), discussion_folder_path.clone()),
                             (String, PathBuf),
                             options.clone()
                         );
                         let view_url = format!("{}discussion_topics/{}/view", url, discussion.id);
                         fork!(
                             process_discussion_view,
-                            (view_url, discussion_folder_path),
-                            (String, PathBuf),
+                            (view_url, discussion_folder_path, discussion),
+                            (String, PathBuf, Discussion),
                             options.clone()
                         )
                     }
@@ -120,14 +121,114 @@ pub async fn process_discussions(
     Ok(())
 }
 
+fn generate_discussion_html(
+    discussion: &Discussion,
+    comments: &[crate::canvas::Comments],
+) -> String {
+    let mut html = String::new();
+
+    html.push_str("<!DOCTYPE html>\n<html>\n<head>\n");
+    html.push_str("    <meta charset=\"UTF-8\">\n");
+    html.push_str(&format!(
+        "    <title>{}</title>\n",
+        html_escape(&discussion.title)
+    ));
+    html.push_str(r#"    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; padding: 0 20px; }
+        .discussion-post { background: #f9f9f9; border-left: 4px solid #4CAF50; padding: 20px; margin-bottom: 30px; }
+        .discussion-title { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+        .discussion-meta { color: #666; font-size: 14px; margin-bottom: 15px; }
+        .discussion-message { line-height: 1.6; }
+        .comments-section { margin-top: 30px; }
+        .comments-header { font-size: 20px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .comment { background: #fff; border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px; }
+        .comment-meta { color: #666; font-size: 14px; margin-bottom: 10px; font-weight: bold; }
+        .comment-message { line-height: 1.6; }
+    </style>
+"#);
+    html.push_str("</head>\n<body>\n");
+
+    // Main discussion post
+    html.push_str("    <div class=\"discussion-post\">\n");
+    html.push_str(&format!(
+        "        <div class=\"discussion-title\">{}</div>\n",
+        html_escape(&discussion.title)
+    ));
+    html.push_str("        <div class=\"discussion-meta\">\n");
+
+    if let Some(ref author) = discussion.author {
+        if let Some(ref display_name) = author.display_name {
+            html.push_str(&format!(
+                "            Posted by: {} | ",
+                html_escape(display_name)
+            ));
+        }
+    }
+
+    if let Some(ref posted_at) = discussion.posted_at {
+        html.push_str(&format!("Posted at: {}", html_escape(posted_at)));
+    }
+
+    html.push_str("\n        </div>\n");
+    html.push_str(&format!(
+        "        <div class=\"discussion-message\">{}</div>\n",
+        &discussion.message
+    ));
+    html.push_str("    </div>\n");
+
+    // Comments section
+    if !comments.is_empty() {
+        html.push_str("    <div class=\"comments-section\">\n");
+        html.push_str(&format!(
+            "        <div class=\"comments-header\">Comments ({})</div>\n",
+            comments.len()
+        ));
+
+        for comment in comments {
+            if let Some(ref message) = comment.message {
+                html.push_str("        <div class=\"comment\">\n");
+                html.push_str("            <div class=\"comment-meta\">\n");
+
+                if let Some(ref user_name) = comment.user_name {
+                    html.push_str(&format!("                {} | ", html_escape(user_name)));
+                }
+
+                if let Some(ref created_at) = comment.created_at {
+                    html.push_str(&format!("{}", html_escape(created_at)));
+                }
+
+                html.push_str("\n            </div>\n");
+                html.push_str(&format!(
+                    "            <div class=\"comment-message\">{}</div>\n",
+                    message
+                ));
+                html.push_str("        </div>\n");
+            }
+        }
+
+        html.push_str("    </div>\n");
+    }
+
+    html.push_str("</body>\n</html>");
+    html
+}
+
+fn html_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
 async fn process_discussion_view(
-    (url, path): (String, PathBuf),
+    (url, path, discussion): (String, PathBuf, Discussion),
     options: Arc<ProcessOptions>,
 ) -> Result<()> {
     let resp = get_canvas_api(url.clone(), &options).await?;
     let discussion_view_body = resp.text().await?;
 
-    let discussion_view_json = path.join("discussion.json");
+    let discussion_view_json = path.join("view.json");
     let mut discussion_view_file = std::fs::File::create(discussion_view_json.clone())
         .with_context(|| format!("Unable to create file for {:?}", discussion_view_json))?;
 
@@ -138,9 +239,13 @@ async fn process_discussion_view(
 
     let discussion_view_result = serde_json::from_str::<DiscussionView>(&discussion_view_body);
     let mut attachments_all = Vec::new();
+    let mut comments = Vec::new();
+
     match discussion_view_result {
         Result::Ok(discussion_view) => {
             for view in discussion_view.view {
+                comments.push(view.clone());
+
                 if let Some(message) = view.message {
                     fork!(
                         process_html_links,
@@ -156,6 +261,15 @@ async fn process_discussion_view(
                     attachments_all.push(attachment);
                 }
             }
+
+            // Generate HTML file with discussion and comments
+            let html_content = generate_discussion_html(&discussion, &comments);
+            let html_path = path.join("discussion.html");
+            let mut html_file = std::fs::File::create(html_path.clone())
+                .with_context(|| format!("Unable to create file for {:?}", html_path))?;
+            html_file
+                .write_all(html_content.as_bytes())
+                .with_context(|| format!("Could not write to file {:?}", html_path))?;
         }
         Result::Err(e) => {
             eprintln!("Error when getting submissions at link:{url}, path:{path:?}\n{e:?}",);

@@ -110,12 +110,21 @@ pub(crate) enum DiscussionResult {
     Err { status: String },
     Ok(Vec<Discussion>),
 }
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Discussion {
     pub id: u32,
     pub title: String,
     pub message: String,
+    pub posted_at: Option<String>,
+    pub author: Option<DiscussionAuthor>,
     pub attachments: Vec<File>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct DiscussionAuthor {
+    pub id: Option<u32>,
+    pub display_name: Option<String>,
+    pub avatar_image_url: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -127,12 +136,15 @@ pub struct DiscussionView {
 #[derive(Clone, Debug, Deserialize)]
 pub struct Comments {
     pub id: u32,
+    pub user_id: Option<u32>,
+    pub user_name: Option<String>,
     pub message: Option<String>,
+    pub created_at: Option<String>,
     pub attachment: Option<File>,
     pub attachments: Option<Vec<File>>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct File {
     pub id: u32,
     pub folder_id: u32,
