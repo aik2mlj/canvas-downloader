@@ -214,7 +214,7 @@ fn updated(filepath: &PathBuf, new_modified: &str) -> bool {
         let new_modified = std::time::SystemTime::from(DateTime::parse_from_rfc3339(new_modified)?);
         let updated = old_modified < new_modified;
         if updated {
-            println!("Found update for {filepath:?}. Use -n to download updated files.");
+            println!("Found update for {filepath:?}.");
         }
         Ok(updated)
     })()
