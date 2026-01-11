@@ -54,6 +54,8 @@ struct CommandLineOptions {
     download_newer: bool,
     #[arg(short = 't', long, value_name = "ID", num_args(1..))]
     term_ids: Option<Vec<u32>>,
+    #[arg(short = 'C', long, value_name = "NAME", num_args(1..))]
+    course_names: Option<Vec<String>>,
     #[arg(short = 'i', long, value_name = "FILE")]
     ignore_file: Option<PathBuf>,
     #[arg(long)]
@@ -166,25 +168,52 @@ async fn main() -> Result<()> {
         .await
         .with_context(|| "Error when getting course json")?; // Result<course> --> course
 
-    // Filter courses by term IDs
-    let Some(term_ids) = args.term_ids else {
-        println!("Please provide the Term ID(s) to download via -t");
+    // Filter courses by term IDs and/or course names
+    if args.term_ids.is_none() && args.course_names.is_none() {
+        println!("Please provide either Term ID(s) via -t or course name(s) via -C");
         print_all_courses_by_term(&courses);
         return Ok(());
-    };
-    let courses_matching_term_ids: Vec<&canvas::Course> = courses
+    }
+
+    let courses_to_download: Vec<&canvas::Course> = courses
         .iter()
-        .filter(|course_json| term_ids.contains(&course_json.enrollment_term_id))
+        .filter(|course| {
+            // Filter by term IDs if provided
+            let matches_term = args
+                .term_ids
+                .as_ref()
+                .map_or(true, |ids| ids.contains(&course.enrollment_term_id));
+
+            // Filter by course names if provided (exact match)
+            let matches_name = args.course_names.as_ref().map_or(true, |names| {
+                names
+                    .iter()
+                    .any(|name| &course.name == name || &course.course_code == name)
+            });
+
+            matches_term && matches_name
+        })
         .collect();
-    if courses_matching_term_ids.is_empty() {
-        println!("Could not find any course matching Term ID(s) {term_ids:?}");
-        println!("Please try the following ID(s) instead");
+
+    if courses_to_download.is_empty() {
+        if let Some(ref term_ids) = args.term_ids {
+            if let Some(ref course_names) = args.course_names {
+                println!(
+                    "Could not find any course matching Term ID(s) {term_ids:?} AND course name(s) {course_names:?}"
+                );
+            } else {
+                println!("Could not find any course matching Term ID(s) {term_ids:?}");
+            }
+        } else if let Some(ref course_names) = args.course_names {
+            println!("Could not find any course matching course name(s) {course_names:?}");
+        }
+        println!("Please try the following instead:");
         print_all_courses_by_term(&courses);
         return Ok(());
     }
 
     println!("Courses found:");
-    for course in courses_matching_term_ids {
+    for course in courses_to_download {
         println!("  * {} - {}", course.course_code, course.name);
 
         // Prep path and mkdir -p

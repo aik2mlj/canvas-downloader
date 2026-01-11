@@ -32,15 +32,28 @@ Term IDs  | Courses
 125       | ["CS3230"]
 ```
 
-### 3. Download Everything
+### 3. Download Your Courses
 
-Specify the terms you want to download:
+You can download courses by term ID or by course name:
 
+**Download by term (all courses in specific terms):**
 ```shell
 $ canvas-downloader --credential-file cred.json -t 115 120
 ```
 
+**Download by course name or code (specific courses only):**
+```shell
+$ canvas-downloader --credential-file cred.json -C CS1101S "Introduction to Data Structures"
+```
+
+**Combine both (courses matching both criteria):**
+```shell
+$ canvas-downloader --credential-file cred.json -t 115 -C CS1101S
+```
+
 The tool will show you all files to be downloaded with their sizes, then ask for confirmation before proceeding. Downloads are organized by course, preserving Canvas's folder structure.
+
+> **Note:** Course name matching is exact match - use the exact course code (e.g., "CS1101S") or the exact course name as shown in the discovery step.
 
 ## What Gets Downloaded
 
@@ -79,6 +92,23 @@ $ canvas-downloader -c cred.json -t 115 -i .canvasignore
 
 See `.canvasignore.example` for more patterns.
 
+### Download Specific Courses
+
+Instead of downloading entire terms, you can download specific courses by exact name or code:
+
+```shell
+# Download a specific course by code
+$ canvas-downloader -c cred.json -C CS2040S
+
+# Download multiple specific courses
+$ canvas-downloader -c cred.json -C CS2040S "Introduction to Algorithms"
+
+# Download specific courses from a specific term
+$ canvas-downloader -c cred.json -t 115 -C CS1101S
+```
+
+Course matching requires exact match with the course code or full course name as displayed in step 2.
+
 ### Keep Your Files Updated
 
 Use `-n` to overwrite local files with newer versions from Canvas:
@@ -115,6 +145,7 @@ Options:
   -d, --destination-folder <FOLDER>  Download location [default: .]
   -n, --download-newer               Overwrite local files with newer Canvas versions
   -t, --term-ids <ID>...             Term IDs to download
+  -C, --course-names <NAME>...       Course names or codes to download (exact match)
   -i, --ignore-file <FILE>           Ignore patterns file
       --dry-run                      Preview downloads without executing
   -v, --verbose                      Show detailed progress
