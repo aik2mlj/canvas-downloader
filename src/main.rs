@@ -54,7 +54,7 @@ struct CommandLineOptions {
     download_newer: bool,
     #[arg(short = 't', long, value_name = "ID", num_args(1..))]
     term_ids: Option<Vec<u32>>,
-    #[arg(short = 'C', long, value_name = "NAME", num_args(1..))]
+    #[arg(short = 'c', long, value_name = "NAME", num_args(1..))]
     course_names: Option<Vec<String>>,
     #[arg(short = 'i', long, value_name = "FILE")]
     ignore_file: Option<PathBuf>,
@@ -201,7 +201,7 @@ async fn main() -> Result<()> {
 
     // Filter courses by term IDs and/or course names
     if args.term_ids.is_none() && args.course_names.is_none() {
-        println!("Please provide either Term ID(s) via -t or course name(s)/code(s) via -C");
+        println!("Please provide either Term ID(s) via -t or course name(s)/code(s) via -c");
         print_all_courses_by_term(&courses);
         return Ok(());
     }

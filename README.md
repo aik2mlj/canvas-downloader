@@ -32,7 +32,7 @@ Run the tool to see which courses are available:
 
 ```shell
 $ canvas-downloader
-Please provide either Term ID(s) via -t or course name(s)/code(s) via -C
+Please provide either Term ID(s) via -t or course name(s)/code(s) via -c
 Term ID    | Course Code | Course Name
 -----------------------------------------------------------
 115        | CS1101S     | Programming Methodology
@@ -57,13 +57,13 @@ $ canvas-downloader -t 115 120
 **Download by course name or code (specific courses only):**
 
 ```shell
-$ canvas-downloader -C CS1101S "Introduction to Data Structures"
+$ canvas-downloader -c CS1101S "Introduction to Data Structures"
 ```
 
 **Combine both (courses matching both criteria):**
 
 ```shell
-$ canvas-downloader -t 115 -C CS1101S
+$ canvas-downloader -t 115 -c CS1101S
 ```
 
 The tool will show you all files to be downloaded with their sizes, then ask for confirmation before proceeding. Downloads are organized by course, preserving Canvas's folder structure.
@@ -143,7 +143,7 @@ Options:
   -d, --destination-folder <FOLDER>  Download location [default: .]
   -n, --download-newer               Overwrite local files with newer Canvas versions
   -t, --term-ids <ID>...             Term IDs to download
-  -C, --course-names <NAME>...       Course names or codes to download (exact match)
+  -c, --course-names <NAME>...       Course names or codes to download (exact match)
   -i, --ignore-file <FILE>           Ignore patterns file
       --dry-run                      Preview downloads without executing
   -v, --verbose                      Show detailed progress
