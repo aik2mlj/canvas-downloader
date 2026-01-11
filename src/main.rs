@@ -46,8 +46,8 @@ use videos::process_videos;
 #[command(name = "Canvas Downloader")]
 #[command(version)]
 struct CommandLineOptions {
-    #[arg(short = 'c', long, value_name = "FILE")]
-    credential_file: PathBuf,
+    #[arg(long, value_name = "FILE")]
+    config: Option<PathBuf>,
     #[arg(short = 'd', long, value_name = "FOLDER", default_value = ".")]
     destination_folder: PathBuf,
     #[arg(short = 'n', long)]
@@ -75,15 +75,46 @@ fn load_ignore_file(
         .with_context(|| format!("Failed to parse ignore file: {:?}", ignore_file_path))
 }
 
+fn find_config_file(config_path: Option<PathBuf>) -> Result<PathBuf> {
+    // If config path is explicitly provided, use it
+    if let Some(path) = config_path {
+        if path.exists() {
+            return Ok(path);
+        } else {
+            anyhow::bail!("Config file not found: {}", path.display());
+        }
+    }
+
+    // Try <package-name>.toml in current directory
+    let cwd_config = PathBuf::from(format!("{}.toml", env!("CARGO_PKG_NAME")));
+    if cwd_config.exists() {
+        return Ok(cwd_config);
+    }
+
+    // Try config.toml in platform-specific config directory
+    if let Some(proj_dirs) = directories::ProjectDirs::from("", "", env!("CARGO_PKG_NAME")) {
+        let config_dir_path = proj_dirs.config_dir().join("config.toml");
+        if config_dir_path.exists() {
+            return Ok(config_dir_path);
+        }
+    }
+
+    anyhow::bail!(
+        "Config file not found. Please create {}.toml in the current directory, or config.toml in your config directory, or use --config to specify a path.",
+        env!("CARGO_PKG_NAME")
+    )
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = CommandLineOptions::parse();
 
     // Load credentials
-    let file = std::fs::File::open(&args.credential_file)
-        .with_context(|| "Could not open credential file")?;
+    let config_path = find_config_file(args.config)?;
+    let config_content = std::fs::read_to_string(&config_path)
+        .with_context(|| format!("Could not read config file: {}", config_path.display()))?;
     let cred: canvas::Credentials =
-        serde_json::from_reader(file).with_context(|| "Credential file is not valid json")?;
+        toml::from_str(&config_content).with_context(|| "Config file is not valid TOML")?;
 
     // Create sub-folder if not exists
     if !args.destination_folder.exists() {

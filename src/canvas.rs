@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
 #[derive(Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Credentials {
     pub canvas_url: String,
     pub canvas_token: String,

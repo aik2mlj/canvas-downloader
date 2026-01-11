@@ -4,27 +4,34 @@ A command-line tool to download and organize all your Canvas course materials—
 
 ## Quick Start
 
-### 1. Get Your Canvas Access Token
+### 1. Create Configuration File
 
-Create a credential file (e.g., `cred.json`):
+Create a config file in TOML format with your Canvas URL and access token:
 
-```json
-{
-  "canvasUrl": "https://canvas.stanford.edu",
-  "canvasToken": "12345~jfkdlejoiferjiofu"
-}
+```toml
+canvas_url = "https://canvas.stanford.edu"
+canvas_token = "12345~jfkdlejoiferjiofu"
 ```
 
 **How to get your token:**
 
 - Log in to Canvas → Account → Settings → **New Access Token**
 
+**Config file locations (searched in order):**
+
+1. Custom path via `--config` option
+1. `canvas-downloader.toml` in current directory
+1. `config.toml` in platform-specific config directory:
+   - Linux: `~/.config/canvas-downloader/config.toml`
+   - macOS: `~/.config/canvas-downloader/config.toml` or `~/Library/Application Support/canvas-downloader/config.toml`
+   - Windows: `%APPDATA%\canvas-downloader\config.toml`
+
 ### 2. Discover Your Courses
 
 Run the tool to see which courses are available:
 
 ```shell
-$ canvas-downloader --credential-file cred.json
+$ canvas-downloader
 Please provide either Term ID(s) via -t or course name(s)/code(s) via -C
 Term ID    | Course Code | Course Name
 -----------------------------------------------------------
@@ -44,19 +51,19 @@ You can download courses by term ID or by course name/code:
 **Download by term (all courses in specific terms):**
 
 ```shell
-$ canvas-downloader --credential-file cred.json -t 115 120
+$ canvas-downloader -t 115 120
 ```
 
 **Download by course name or code (specific courses only):**
 
 ```shell
-$ canvas-downloader --credential-file cred.json -C CS1101S "Introduction to Data Structures"
+$ canvas-downloader -C CS1101S "Introduction to Data Structures"
 ```
 
 **Combine both (courses matching both criteria):**
 
 ```shell
-$ canvas-downloader --credential-file cred.json -t 115 -C CS1101S
+$ canvas-downloader -t 115 -C CS1101S
 ```
 
 The tool will show you all files to be downloaded with their sizes, then ask for confirmation before proceeding. Downloads are organized by course, preserving Canvas's folder structure.
@@ -95,7 +102,7 @@ lecture-recordings/
 Then use it with `-i`:
 
 ```shell
-$ canvas-downloader -c cred.json -t 115 -i .canvasignore
+$ canvas-downloader -t 115 -i .canvasignore
 ```
 
 See `.canvasignore.example` for more patterns.
@@ -105,7 +112,7 @@ See `.canvasignore.example` for more patterns.
 Use `-n` to overwrite local files with newer versions from Canvas:
 
 ```shell
-$ canvas-downloader -c cred.json -t 115 -n
+$ canvas-downloader -t 115 -n
 ```
 
 By default, existing local files won't be overwritten even if Canvas has newer versions.
@@ -115,7 +122,7 @@ By default, existing local files won't be overwritten even if Canvas has newer v
 Specify a custom folder with `-d`:
 
 ```shell
-$ canvas-downloader -c cred.json -t 115 -d ~/Canvas
+$ canvas-downloader -t 115 -d ~/Canvas
 ```
 
 ### See More Details
@@ -123,16 +130,16 @@ $ canvas-downloader -c cred.json -t 115 -d ~/Canvas
 Use `-v` for verbose output showing rate limiting, access warnings, and what's being skipped:
 
 ```shell
-$ canvas-downloader -c cred.json -t 115 -v
+$ canvas-downloader -t 115 -v
 ```
 
 ## All Options
 
 ```
-Usage: canvas-downloader [OPTIONS] --credential-file <FILE>
+Usage: canvas-downloader [OPTIONS]
 
 Options:
-  -c, --credential-file <FILE>       Path to credentials JSON file
+      --config <FILE>                Path to config file (TOML format)
   -d, --destination-folder <FOLDER>  Download location [default: .]
   -n, --download-newer               Overwrite local files with newer Canvas versions
   -t, --term-ids <ID>...             Term IDs to download
