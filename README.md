@@ -25,7 +25,7 @@ Run the tool to see which courses are available:
 
 ```shell
 $ canvas-downloader --credential-file cred.json
-Please provide either Term ID(s) via -t or course name(s) via -C
+Please provide either Term ID(s) via -t or course name(s)/code(s) via -C
 Term ID    | Course Code | Course Name
 -----------------------------------------------------------
 115        | CS1101S     | Programming Methodology
@@ -39,19 +39,22 @@ Term ID    | Course Code | Course Name
 
 ### 3. Download Your Courses
 
-You can download courses by term ID or by course name:
+You can download courses by term ID or by course name/code:
 
 **Download by term (all courses in specific terms):**
+
 ```shell
 $ canvas-downloader --credential-file cred.json -t 115 120
 ```
 
 **Download by course name or code (specific courses only):**
+
 ```shell
 $ canvas-downloader --credential-file cred.json -C CS1101S "Introduction to Data Structures"
 ```
 
 **Combine both (courses matching both criteria):**
+
 ```shell
 $ canvas-downloader --credential-file cred.json -t 115 -C CS1101S
 ```
@@ -96,23 +99,6 @@ $ canvas-downloader -c cred.json -t 115 -i .canvasignore
 ```
 
 See `.canvasignore.example` for more patterns.
-
-### Download Specific Courses
-
-Instead of downloading entire terms, you can download specific courses by exact name or code:
-
-```shell
-# Download a specific course by code
-$ canvas-downloader -c cred.json -C CS2040S
-
-# Download multiple specific courses
-$ canvas-downloader -c cred.json -C CS2040S "Introduction to Algorithms"
-
-# Download specific courses from a specific term
-$ canvas-downloader -c cred.json -t 115 -C CS1101S
-```
-
-Course matching requires exact match with the course code or full course name as displayed in step 2.
 
 ### Keep Your Files Updated
 

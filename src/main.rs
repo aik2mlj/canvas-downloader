@@ -170,7 +170,7 @@ async fn main() -> Result<()> {
 
     // Filter courses by term IDs and/or course names
     if args.term_ids.is_none() && args.course_names.is_none() {
-        println!("Please provide either Term ID(s) via -t or course name(s) via -C");
+        println!("Please provide either Term ID(s) via -t or course name(s)/code(s) via -C");
         print_all_courses_by_term(&courses);
         return Ok(());
     }
