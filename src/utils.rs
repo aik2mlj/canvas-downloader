@@ -5,18 +5,64 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 pub fn print_all_courses_by_term(courses: &[Course]) {
-    let mut grouped_courses: HashMap<u32, Vec<&str>> = HashMap::new();
+    let mut grouped_courses: HashMap<u32, Vec<(&str, &str)>> = HashMap::new();
 
     for course in courses.iter() {
         let course_id: u32 = course.enrollment_term_id;
         grouped_courses
             .entry(course_id)
             .or_insert_with(Vec::new)
-            .push(&course.course_code);
+            .push((&course.course_code, &course.name));
     }
-    println!("{: <10}| {:?}", "Term IDs", "Courses");
-    for (key, value) in &grouped_courses {
-        println!("{: <10}| {:?}", key, value);
+
+    // Calculate column widths
+    let max_code_width = courses
+        .iter()
+        .map(|c| c.course_code.len())
+        .max()
+        .unwrap_or(12)
+        .max(12); // At least 12 for "Course Code" header
+
+    // Print header
+    println!(
+        "{:<10} | {:<width$} | {}",
+        "Term ID",
+        "Course Code",
+        "Course Name",
+        width = max_code_width
+    );
+    println!("{}", "-".repeat(10 + 3 + max_code_width + 3 + 40));
+
+    // Sort by term ID for consistent output
+    let mut term_ids: Vec<_> = grouped_courses.keys().collect();
+    term_ids.sort();
+
+    for (term_idx, term_id) in term_ids.iter().enumerate() {
+        let courses_in_term = &grouped_courses[term_id];
+        for (i, (code, name)) in courses_in_term.iter().enumerate() {
+            if i == 0 {
+                println!(
+                    "{:<10} | {:<width$} | {}",
+                    term_id,
+                    code,
+                    name,
+                    width = max_code_width
+                );
+            } else {
+                println!(
+                    "{:<10} | {:<width$} | {}",
+                    "",
+                    code,
+                    name,
+                    width = max_code_width
+                );
+            }
+        }
+
+        // Add separator line between terms (but not after the last one)
+        if term_idx < term_ids.len() - 1 {
+            println!("{}", "-".repeat(10 + 3 + max_code_width + 3 + 40));
+        }
     }
 }
 

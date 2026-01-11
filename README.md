@@ -25,11 +25,16 @@ Run the tool to see which courses are available:
 
 ```shell
 $ canvas-downloader --credential-file cred.json
-Please provide the Term ID(s) to download via -t
-Term IDs  | Courses
-115       | ["CS1101S", "CS1231S"]
-120       | ["CS2040S", "CS2030"]
-125       | ["CS3230"]
+Please provide either Term ID(s) via -t or course name(s) via -C
+Term ID    | Course Code | Course Name
+-----------------------------------------------------------
+115        | CS1101S     | Programming Methodology
+           | CS1231S     | Discrete Structures
+-----------------------------------------------------------
+120        | CS2040S     | Data Structures and Algorithms
+           | CS2030      | Programming Methodology II
+-----------------------------------------------------------
+125        | CS3230      | Design and Analysis of Algorithms
 ```
 
 ### 3. Download Your Courses
