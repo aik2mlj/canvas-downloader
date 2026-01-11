@@ -52,9 +52,7 @@ pub async fn process_videos(
         let panopto_form = match panopto_form {
             Some(form) => form,
             None => {
-                if options.verbose {
-                    println!("No Panopto videos found for course");
-                }
+                tracing::debug!("No Panopto videos found for course");
                 return Ok(());
             }
         };
@@ -334,11 +332,11 @@ async fn process_session(
                     let mut filtered_files = filter_files(&options, &path, [file].to_vec());
                     lock.append(&mut filtered_files);
                 }
-                Err(e) => println!("Error: {:?}", e),
+                Err(e) => tracing::error!("{e:?}"),
             }
         }
         Ok(Playlist::MediaPlaylist(_pl)) => {}
-        Err(e) => println!("Error: {:?}", e),
+        Err(e) => tracing::error!("{e:?}"),
     }
 
     Ok(())

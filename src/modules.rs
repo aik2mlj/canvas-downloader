@@ -62,15 +62,15 @@ pub async fn process_modules(
             }
 
             Ok(ModuleResult::Err { status }) => {
-                eprintln!("No modules found for url {} status: {}", url, status);
+                tracing::error!("No modules found for url {} status: {}", url, status);
             }
 
             Ok(ModuleResult::Empty(_)) => {
-                eprintln!("No modules found for url {} (empty response)", url);
+                tracing::error!("No modules found for url {} (empty response)", url);
             }
 
             Err(e) => {
-                eprintln!("No modules found for url {} error: {}", url, e);
+                tracing::error!("No modules found for url {} error: {}", url, e);
             }
         };
     }
@@ -122,9 +122,10 @@ async fn process_module_items(
                                         }
                                     }
                                     Err(e) => {
-                                        eprintln!(
+                                        tracing::error!(
                                             "Error processing module file {}: {:?}",
-                                            content_id, e
+                                            content_id,
+                                            e
                                         );
                                     }
                                 }
@@ -150,13 +151,13 @@ async fn process_module_items(
                         }
                         "Assignment" => {
                             if let Some(content_id) = item.content_id {
-                                eprintln!("Module item {} references assignment {}, consider downloading assignments separately",
+                                tracing::error!("Module item {} references assignment {}, consider downloading assignments separately",
                                          item.title, content_id);
                             }
                         }
                         "Discussion" => {
                             if let Some(content_id) = item.content_id {
-                                eprintln!("Module item {} references discussion {}, consider downloading discussions separately",
+                                tracing::error!("Module item {} references discussion {}, consider downloading discussions separately",
                                          item.title, content_id);
                             }
                         }
@@ -179,9 +180,10 @@ async fn process_module_items(
                             create_folder_if_not_exist(&subheader_path)?;
                         }
                         _ => {
-                            eprintln!(
+                            tracing::error!(
                                 "Unsupported module item type '{}' for item '{}'",
-                                item.item_type, item.title
+                                item.item_type,
+                                item.title
                             );
                         }
                     }
@@ -189,17 +191,19 @@ async fn process_module_items(
             }
 
             Ok(ModuleItemResult::Err { status }) => {
-                eprintln!(
+                tracing::error!(
                     "Failed to access module items at link:{url}, path:{path:?}, status:{status}"
                 );
             }
 
             Ok(ModuleItemResult::Empty(_)) => {
-                eprintln!("No module items found for url {} (empty response)", url);
+                tracing::error!("No module items found for url {} (empty response)", url);
             }
 
             Err(e) => {
-                eprintln!("Error when getting module items at link:{url}, path:{path:?}\n{e:?}");
+                tracing::error!(
+                    "Error when getting module items at link:{url}, path:{path:?}\n{e:?}"
+                );
             }
         }
     }

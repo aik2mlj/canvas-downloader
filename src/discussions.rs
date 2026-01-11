@@ -105,16 +105,14 @@ pub async fn process_discussions(
                 }
             }
             Ok(DiscussionResult::Err { status }) => {
-                if options.verbose {
-                    println!(
-                        "Failed to access discussions at link:{uri}, path:{path:?}, status:{status}",
-                    );
-                }
+                tracing::debug!(
+                    "Failed to access discussions at link:{uri}, path:{path:?}, status:{status}",
+                );
             }
             Err(e) => {
-                if options.verbose {
-                    println!("Error when getting discussions at link:{uri}, path:{path:?}\n{e:?}",);
-                }
+                tracing::debug!(
+                    "Error when getting discussions at link:{uri}, path:{path:?}\n{e:?}",
+                );
             }
         }
     }
@@ -272,7 +270,7 @@ async fn process_discussion_view(
                 .with_context(|| format!("Could not write to file {:?}", html_path))?;
         }
         Result::Err(e) => {
-            eprintln!("Error when getting submissions at link:{url}, path:{path:?}\n{e:?}",);
+            tracing::error!("Error when getting submissions at link:{url}, path:{path:?}\n{e:?}",);
         }
     }
 

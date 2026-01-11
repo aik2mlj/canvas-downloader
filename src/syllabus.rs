@@ -61,20 +61,18 @@ pub async fn process_syllabus(
                         .with_context(|| {
                             format!("Could not write to file {:?}", syllabus_html_path)
                         })?;
-                } else if options.verbose {
-                    println!(
+                } else {
+                    tracing::debug!(
                         "No syllabus content found for course {}",
                         syllabus.course_code
                     );
                 }
-            } else if options.verbose {
-                println!("No syllabus found for course {}", syllabus.course_code);
+            } else {
+                tracing::debug!("No syllabus found for course {}", syllabus.course_code);
             }
         }
         Err(e) => {
-            if options.verbose {
-                println!("Error parsing syllabus: {}", e);
-            }
+            tracing::debug!("Error parsing syllabus: {}", e);
         }
     }
 

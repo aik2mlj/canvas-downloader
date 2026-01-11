@@ -25,7 +25,7 @@ pub async fn atomic_download_file(file: File, options: Arc<ProcessOptions>) -> R
     // Aborted download?
     if let Err(e) = download_file((&tmp_path, &file), options.clone()).await {
         if let Err(e) = std::fs::remove_file(&tmp_path) {
-            eprintln!(
+            tracing::error!(
                 "Failed to remove temporary file {tmp_path:?} for {}, err={e:?}",
                 file.display_name
             );
@@ -40,9 +40,10 @@ pub async fn atomic_download_file(file: File, options: Arc<ProcessOptions>) -> R
         updated_at.timestamp_subsec_nanos(),
     );
     if let Err(e) = filetime::set_file_mtime(&tmp_path, updated_time) {
-        eprintln!(
+        tracing::error!(
             "Failed to set modified time of {} with updated_at of {}, err={e:?}",
-            file.display_name, file.updated_at
+            file.display_name,
+            file.updated_at
         )
     }
 
@@ -126,7 +127,7 @@ pub async fn process_folders(
                     };
                     if !folder_path.exists() {
                         if let Err(e) = std::fs::create_dir(&folder_path) {
-                            eprintln!(
+                            tracing::error!(
                                 "Failed to create directory: {}, err={e}",
                                 folder_path.to_string_lossy()
                             );
@@ -153,7 +154,7 @@ pub async fn process_folders(
             Ok(FolderResult::Err { status }) => {
                 let course_has_no_folders = status == "unauthorized";
                 if !course_has_no_folders {
-                    eprintln!(
+                    tracing::error!(
                         "Failed to access folders at link:{uri}, path:{path:?}, status:{status}",
                     );
                 }
@@ -161,7 +162,7 @@ pub async fn process_folders(
 
             // Parse error
             Err(e) => {
-                eprintln!("Error when getting folders at link:{uri}, path:{path:?}\n{e:?}",);
+                tracing::error!("Error when getting folders at link:{uri}, path:{path:?}\n{e:?}",);
             }
         }
     }
@@ -192,7 +193,7 @@ pub async fn process_files(
             Ok(FileResult::Err { status }) => {
                 let course_has_no_files = status == "unauthorized";
                 if !course_has_no_files {
-                    eprintln!(
+                    tracing::error!(
                         "Failed to access files at link:{uri}, path:{path:?}, status:{status}",
                     );
                 }
@@ -200,7 +201,7 @@ pub async fn process_files(
 
             // Parse error
             Err(e) => {
-                eprintln!("Error when getting files at link:{uri}, path:{path:?}\n{e:?}",);
+                tracing::error!("Error when getting files at link:{uri}, path:{path:?}\n{e:?}",);
             }
         };
     }
@@ -235,9 +236,10 @@ pub fn filter_files(options: &ProcessOptions, path: &Path, files: Vec<File>) -> 
             if DateTime::parse_from_rfc3339(&f.updated_at).is_ok() {
                 return true;
             }
-            eprintln!(
+            tracing::error!(
                 "Failed to parse updated_at time for {}, {}",
-                f.display_name, f.updated_at
+                f.display_name,
+                f.updated_at
             );
             false
         })
@@ -254,9 +256,7 @@ pub fn filter_files(options: &ProcessOptions, path: &Path, files: Vec<File>) -> 
                     .unwrap_or(&f.filepath);
                 let matched = matcher.matched_path_or_any_parents(relative_path, false);
                 if matched.is_ignore() {
-                    if options.verbose {
-                        println!("Ignoring file: {}", f.filepath.display());
-                    }
+                    tracing::debug!("Ignoring file: {}", f.filepath.display());
                     return false;
                 }
             }
@@ -279,7 +279,7 @@ pub async fn process_file_id(
             return Ok(file);
         }
         Err(e) => {
-            eprintln!("Error when getting file info at link:{url}, path:{path:?}\n{e:?}",);
+            tracing::error!("Error when getting file info at link:{url}, path:{path:?}\n{e:?}",);
             return Err(Into::into(e));
         }
     }

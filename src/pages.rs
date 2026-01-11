@@ -64,21 +64,15 @@ pub async fn process_pages(
             }
 
             Ok(PageResult::Err { status }) => {
-                if options.verbose {
-                    println!("No pages found for url {} (status: {})", uri, status);
-                }
+                tracing::debug!("No pages found for url {} (status: {})", uri, status);
             }
 
             Ok(PageResult::Empty(_)) => {
-                if options.verbose {
-                    println!("No pages found for url {} (empty response)", uri);
-                }
+                tracing::debug!("No pages found for url {} (empty response)", uri);
             }
 
             Err(e) => {
-                if options.verbose {
-                    println!("No pages found for url {} (error: {})", uri, e);
-                }
+                tracing::debug!("No pages found for url {} (error: {})", uri, e);
             }
         };
     }
@@ -126,7 +120,9 @@ pub async fn process_page_body(
             )
         }
         Result::Err(e) => {
-            eprintln!("Error when parsing page body at link:{url}, path:{page_file_path:?}\n{e:?}",);
+            tracing::error!(
+                "Error when parsing page body at link:{url}, path:{page_file_path:?}\n{e:?}",
+            );
         }
     }
     Ok(())

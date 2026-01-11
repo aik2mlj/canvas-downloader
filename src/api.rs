@@ -64,15 +64,16 @@ pub async fn get_canvas_api(url: String, options: &ProcessOptions) -> Result<Res
             Ok(resp) => {
                 if resp.status() == reqwest::StatusCode::FORBIDDEN {
                     if retry == 2 {
-                        // Log more specific error information on final retry (only in verbose mode)
-                        if options.verbose {
-                            if url.contains("users") {
-                                println!("Access denied to user data for course - API token may need elevated permissions");
-                            } else if url.contains("discussion_topics") {
-                                println!("Access denied to discussions - course may have restricted discussion access");
-                            } else {
-                                println!("Access denied to {} - check API token permissions", url);
-                            }
+                        // Log more specific error information on final retry
+                        if url.contains("users") {
+                            tracing::debug!("Access denied to user data for course - API token may need elevated permissions");
+                        } else if url.contains("discussion_topics") {
+                            tracing::debug!("Access denied to discussions - course may have restricted discussion access");
+                        } else {
+                            tracing::debug!(
+                                "Access denied to {} - check API token permissions",
+                                url
+                            );
                         }
                         return Ok(resp);
                     }
@@ -81,7 +82,7 @@ pub async fn get_canvas_api(url: String, options: &ProcessOptions) -> Result<Res
                 }
             }
             Err(e) => {
-                println!("Canvas request error uri: {} {}", url, e);
+                tracing::error!("Canvas request error uri: {} {}", url, e);
                 return Err(e.into());
             }
         }
@@ -92,14 +93,12 @@ pub async fn get_canvas_api(url: String, options: &ProcessOptions) -> Result<Res
         let jitter = rand::rng().random_range(0..=exponential_delay / 2);
         let wait_time = Duration::from_millis(exponential_delay + jitter);
 
-        if options.verbose {
-            println!(
-                "Rate limited (403) for {}, waiting {:?} before retry {}/3",
-                url,
-                wait_time,
-                retry + 1
-            );
-        }
+        tracing::debug!(
+            "Rate limited (403) for {}, waiting {:?} before retry {}/3",
+            url,
+            wait_time,
+            retry + 1
+        );
         tokio::time::sleep(wait_time).await;
     }
     Err(Error::msg("canvas request failed"))

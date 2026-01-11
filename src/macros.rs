@@ -20,7 +20,7 @@ macro_rules! fork {
                     options.notify_main.notify_one();
                 }
                 if let Err(e) = res {
-                    eprintln!("{e:?}");
+                    tracing::error!("{e:?}");
                 }
             });
         }

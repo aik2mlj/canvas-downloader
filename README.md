@@ -129,13 +129,16 @@ Specify a custom folder with `-d`:
 $ canvas-downloader -t 115 -d ~/Canvas
 ```
 
-### See More Details
+### See Debug Information
 
-Use `-v` for verbose output showing rate limiting, access warnings, and what's being skipped:
+Use `-v` to enable verbose output for troubleshooting:
 
 ```shell
+# Enable debug logging
 $ canvas-downloader -t 115 -v
 ```
+
+Without `-v`, only important progress messages are shown (info level).
 
 ## All Options
 
@@ -150,7 +153,7 @@ Options:
   -c, --course-names <NAME>...       Course names or codes to download (exact match)
   -i, --ignore-file <FILE>           Ignore patterns file
       --dry-run                      Preview downloads without executing
-  -v, --verbose                      Show detailed progress
+  -v, --verbose                      Enable debug logging
   -h, --help                         Print help
   -V, --version                      Print version
 ```

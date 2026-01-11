@@ -109,6 +109,17 @@ fn find_config_file(config_path: Option<PathBuf>) -> Result<PathBuf> {
 async fn main() -> Result<()> {
     let args = CommandLineOptions::parse();
 
+    // Initialize tracing
+    let filter = if args.verbose {
+        "canvas_downloader=debug"
+    } else {
+        "canvas_downloader=info"
+    };
+    tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_target(false)
+        .init();
+
     // Load credentials
     let config_path = find_config_file(args.config)?;
     let config_content = std::fs::read_to_string(&config_path)
@@ -171,7 +182,6 @@ async fn main() -> Result<()> {
         ignore_matcher,
         ignore_base_path: args.destination_folder.clone(),
         dry_run: args.dry_run,
-        verbose: args.verbose,
         // Download
         progress_bars: indicatif::MultiProgress::new(),
         progress_style: {
@@ -238,14 +248,14 @@ async fn main() -> Result<()> {
     if courses_to_download.is_empty() {
         if let Some(ref term_ids) = args.term_ids {
             if let Some(ref course_names) = args.course_names {
-                println!(
+                tracing::warn!(
                     "Could not find any course matching Term ID(s) {term_ids:?} AND course name(s) {course_names:?}"
                 );
             } else {
-                println!("Could not find any course matching Term ID(s) {term_ids:?}");
+                tracing::warn!("Could not find any course matching Term ID(s) {term_ids:?}");
             }
         } else if let Some(ref course_names) = args.course_names {
-            println!("Could not find any course matching course name(s) {course_names:?}");
+            tracing::warn!("Could not find any course matching course name(s) {course_names:?}");
         }
         println!("Please try the following instead:");
         print_all_courses_by_term(&courses);

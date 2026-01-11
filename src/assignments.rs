@@ -54,15 +54,17 @@ pub async fn process_assignments(
                 }
             }
             Ok(AssignmentResult::Err { status }) => {
-                eprintln!(
+                tracing::error!(
                     "Failed to access assignments at link:{uri}, path:{path:?}, status:{status}",
                 );
             }
             Ok(AssignmentResult::Empty(_)) => {
-                eprintln!("No assignments found for url {} (empty response)", uri);
+                tracing::error!("No assignments found for url {} (empty response)", uri);
             }
             Err(e) => {
-                eprintln!("Error when getting assignments at link:{uri}, path:{path:?}\n{e:?}",);
+                tracing::error!(
+                    "Error when getting assignments at link:{uri}, path:{path:?}\n{e:?}",
+                );
             }
         }
     }
@@ -176,7 +178,7 @@ async fn process_submissions(
             lock.append(&mut filtered_files);
         }
         Result::Err(e) => {
-            eprintln!("Error when getting submissions at link:{url}, path:{path:?}\n{e:?}",);
+            tracing::error!("Error when getting submissions at link:{url}, path:{path:?}\n{e:?}",);
         }
     }
 
