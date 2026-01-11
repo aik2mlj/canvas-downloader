@@ -85,7 +85,7 @@ The tool will show you all files to be downloaded with their sizes, then ask for
 
 ### Filter What You Download
 
-Create an ignore file (`.canvasignore`) to skip certain files using `.gitignore` syntax:
+Create a `.canvasignore` file in your current directory to skip certain files using `.gitignore` syntax:
 
 ```shell
 # Ignore all videos
@@ -99,10 +99,10 @@ Create an ignore file (`.canvasignore`) to skip certain files using `.gitignore`
 lecture-recordings/
 ```
 
-Then use it with `-i`:
+The tool automatically loads `.canvasignore` from the current directory if it exists. You can also specify a custom ignore file with `-i`:
 
 ```shell
-$ canvas-downloader -t 115 -i .canvasignore
+$ canvas-downloader -t 115 -i custom-ignore.txt
 ```
 
 See `.canvasignore.example` for more patterns.

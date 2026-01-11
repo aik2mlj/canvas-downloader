@@ -141,14 +141,23 @@ async fn main() -> Result<()> {
         .with_context(|| "Failed to get user info")?;
     let courses_link = format!("{}/api/v1/users/self/courses", cred.canvas_url);
 
-    // Load ignore file if provided
+    // Load ignore file if provided, or look for .canvasignore in CWD
     let ignore_matcher = if let Some(ref ignore_file_path) = args.ignore_file {
         Some(Arc::new(load_ignore_file(
             ignore_file_path,
             &args.destination_folder,
         )?))
     } else {
-        None
+        // Try to load .canvasignore from current directory if it exists
+        let default_ignore = PathBuf::from(".canvasignore");
+        if default_ignore.exists() {
+            Some(Arc::new(load_ignore_file(
+                &default_ignore,
+                &args.destination_folder,
+            )?))
+        } else {
+            None
+        }
     };
 
     let options = Arc::new(ProcessOptions {
