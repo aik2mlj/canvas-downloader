@@ -125,6 +125,17 @@ pub async fn process_folders(
                     } else {
                         path.clone()
                     };
+
+                    // if the folder is ignored, do not process it or its contents
+                    if ignored(
+                        &folder_path,
+                        true,
+                        &options.ignore_base_path,
+                        options.ignore_matcher.as_deref(),
+                    ) {
+                        continue;
+                    }
+
                     if !folder_path.exists() {
                         if let Err(e) = std::fs::create_dir(&folder_path) {
                             tracing::error!(
@@ -222,6 +233,27 @@ fn updated(filepath: &PathBuf, new_modified: &str) -> bool {
     .unwrap_or(false)
 }
 
+fn ignored(
+    filepath: &Path,
+    is_dir: bool,
+    ignore_base_path: &Path,
+    ignore_matcher: Option<&ignore::gitignore::Gitignore>,
+) -> bool {
+    let matcher = match ignore_matcher {
+        Some(m) => m,
+        None => return false,
+    };
+
+    let relative_path = filepath.strip_prefix(ignore_base_path).unwrap_or(filepath);
+    let ignored = matcher
+        .matched_path_or_any_parents(relative_path, is_dir)
+        .is_ignore();
+    if ignored {
+        tracing::debug!("Ignoring path: {}", filepath.display());
+    }
+    ignored
+}
+
 pub fn filter_files(options: &ProcessOptions, path: &Path, files: Vec<File>) -> Vec<File> {
     // only download files that do not exist or are updated
     files
@@ -247,20 +279,12 @@ pub fn filter_files(options: &ProcessOptions, path: &Path, files: Vec<File>) -> 
             !f.filepath.exists() || (updated(&f.filepath, &f.updated_at) && options.download_newer)
         })
         .filter(|f| {
-            // Check if file matches ignore patterns
-            if let Some(ref matcher) = options.ignore_matcher {
-                // Convert to relative path from the base directory for gitignore matching
-                let relative_path = f
-                    .filepath
-                    .strip_prefix(&options.ignore_base_path)
-                    .unwrap_or(&f.filepath);
-                let matched = matcher.matched_path_or_any_parents(relative_path, false);
-                if matched.is_ignore() {
-                    tracing::debug!("Ignoring file: {}", f.filepath.display());
-                    return false;
-                }
-            }
-            true
+            !ignored(
+                &f.filepath,
+                false,
+                &options.ignore_base_path,
+                options.ignore_matcher.as_deref(),
+            )
         })
         .collect()
 }
