@@ -15,7 +15,7 @@ use serde_json::json;
 use crate::api::get_canvas_api;
 use crate::canvas::{File, PanoptoDeliveryInfo, PanoptoSessionInfo, ProcessOptions, Session};
 use crate::files::filter_files;
-use crate::utils::create_folder_if_not_exist;
+use crate::utils::create_folder_if_not_exist_or_ignored;
 
 pub async fn process_videos(
     (url, id, path): (String, u32, PathBuf),
@@ -100,7 +100,9 @@ pub async fn process_videos(
         .to_string();
 
     let video_folder_path = path.join("videos");
-    create_folder_if_not_exist(&video_folder_path)?;
+    if !create_folder_if_not_exist_or_ignored(&video_folder_path, options.clone())? {
+        return Ok(());
+    }
     process_video_folder(
         (
             panopto_host,
@@ -182,7 +184,9 @@ async fn process_video_folder(
         if i == 0 {
             for subfolder in sessions.Subfolders {
                 let subfolder_path = path.join(subfolder.Name);
-                create_folder_if_not_exist(&subfolder_path)?;
+                if !create_folder_if_not_exist_or_ignored(&subfolder_path, options.clone())? {
+                    continue;
+                }
                 fork!(
                     process_video_folder,
                     (host.clone(), subfolder.ID, client.clone(), subfolder_path),

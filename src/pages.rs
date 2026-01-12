@@ -7,7 +7,7 @@ use anyhow::{Context, Result};
 use crate::api::{get_canvas_api, get_pages};
 use crate::canvas::{PageBody, PageResult, ProcessOptions};
 use crate::html::process_html_links;
-use crate::utils::{create_folder_if_not_exist, prettify_json};
+use crate::utils::{create_folder_if_not_exist_or_ignored, prettify_json};
 
 pub async fn process_pages(
     (url, path): (String, PathBuf),
@@ -30,7 +30,9 @@ pub async fn process_pages(
                 if !pages.is_empty() && !has_pages {
                     // Create pages folder only when we have actual pages
                     let pages_path = path.join("pages");
-                    create_folder_if_not_exist(&pages_path)?;
+                    if !create_folder_if_not_exist_or_ignored(&pages_path, options.clone())? {
+                        continue;
+                    }
                     pages_folder_path = Some(pages_path.clone());
                     has_pages = true;
 
@@ -53,7 +55,10 @@ pub async fn process_pages(
                         let page_url = format!("{}pages/{}", url, page.url);
                         let page_file_path =
                             pages_path.join(sanitize_filename::sanitize(&page.title));
-                        create_folder_if_not_exist(&page_file_path)?;
+                        if !create_folder_if_not_exist_or_ignored(&page_file_path, options.clone())?
+                        {
+                            continue;
+                        }
                         fork!(
                             process_page_body,
                             (page_url, page.title, page_file_path),

@@ -13,6 +13,7 @@ use reqwest::header;
 use crate::api::get_canvas_api;
 use crate::api::get_pages;
 use crate::canvas::{File, FileResult, FolderResult, ProcessOptions};
+use crate::utils::ignored;
 
 pub async fn atomic_download_file(file: File, options: Arc<ProcessOptions>) -> Result<()> {
     // Create tmp file from hash
@@ -232,28 +233,6 @@ fn updated(filepath: &PathBuf, new_modified: &str) -> bool {
     })()
     .unwrap_or(false)
 }
-
-fn ignored(
-    filepath: &Path,
-    is_dir: bool,
-    ignore_base_path: &Path,
-    ignore_matcher: Option<&ignore::gitignore::Gitignore>,
-) -> bool {
-    let matcher = match ignore_matcher {
-        Some(m) => m,
-        None => return false,
-    };
-
-    let relative_path = filepath.strip_prefix(ignore_base_path).unwrap_or(filepath);
-    let ignored = matcher
-        .matched_path_or_any_parents(relative_path, is_dir)
-        .is_ignore();
-    if ignored {
-        tracing::debug!("Ignoring path: {}", filepath.display());
-    }
-    ignored
-}
-
 pub fn filter_files(options: &ProcessOptions, path: &Path, files: Vec<File>) -> Vec<File> {
     // only download files that do not exist or are updated
     files

@@ -39,7 +39,7 @@ use modules::process_modules;
 use pages::process_pages;
 use syllabus::process_syllabus;
 use users::process_users;
-use utils::{create_folder_if_not_exist, format_bytes, print_all_courses_by_term};
+use utils::{create_folder_if_not_exist_or_ignored, format_bytes, print_all_courses_by_term};
 use videos::process_videos;
 
 #[derive(Parser)]
@@ -270,7 +270,9 @@ async fn main() -> Result<()> {
         let course_folder_path = args
             .destination_folder
             .join(course.course_code.replace('/', "_"));
-        create_folder_if_not_exist(&course_folder_path)?;
+        if !create_folder_if_not_exist_or_ignored(&course_folder_path, options.clone())? {
+            continue;
+        }
         // Prep URL for course's root folder
         let course_folders_link = format!(
             "{}/api/v1/courses/{}/folders/by_path/",
@@ -278,13 +280,14 @@ async fn main() -> Result<()> {
         );
 
         let folder_path = course_folder_path.join("files");
-        create_folder_if_not_exist(&folder_path)?;
-        fork!(
-            process_folders,
-            (course_folders_link, folder_path),
-            (String, PathBuf),
-            options.clone()
-        );
+        if create_folder_if_not_exist_or_ignored(&folder_path, options.clone())? {
+            fork!(
+                process_folders,
+                (course_folders_link, folder_path),
+                (String, PathBuf),
+                options.clone()
+            );
+        }
 
         let course_api_link = format!("{}/api/v1/courses/{}/", cred.canvas_url, course.id);
         fork!(
@@ -468,13 +471,14 @@ async fn process_data(
     options: Arc<ProcessOptions>,
 ) -> Result<()> {
     let assignments_path = path.join("assignments");
-    create_folder_if_not_exist(&assignments_path)?;
-    fork!(
-        process_assignments,
-        (url.clone(), assignments_path),
-        (String, PathBuf),
-        options.clone()
-    );
+    if create_folder_if_not_exist_or_ignored(&assignments_path, options.clone())? {
+        fork!(
+            process_assignments,
+            (url.clone(), assignments_path),
+            (String, PathBuf),
+            options.clone()
+        );
+    }
     let users_path = path.join("users.json");
     fork!(
         process_users,

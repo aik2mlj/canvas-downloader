@@ -1,8 +1,9 @@
-use crate::canvas::Course;
+use crate::canvas::{Course, ProcessOptions};
 use anyhow::{Context, Result};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 pub fn print_all_courses_by_term(courses: &[Course]) {
     let mut grouped_courses: HashMap<u32, Vec<(&str, &str)>> = HashMap::new();
@@ -66,7 +67,28 @@ pub fn print_all_courses_by_term(courses: &[Course]) {
     }
 }
 
-pub fn create_folder_if_not_exist(folder_path: &PathBuf) -> Result<()> {
+pub fn ignored(
+    filepath: &PathBuf,
+    is_dir: bool,
+    ignore_base_path: &PathBuf,
+    ignore_matcher: Option<&ignore::gitignore::Gitignore>,
+) -> bool {
+    let matcher = match ignore_matcher {
+        Some(m) => m,
+        None => return false,
+    };
+
+    let relative_path = filepath.strip_prefix(ignore_base_path).unwrap_or(filepath);
+    let ignored = matcher
+        .matched_path_or_any_parents(relative_path, is_dir)
+        .is_ignore();
+    if ignored {
+        tracing::debug!("Ignoring path: {}", filepath.display());
+    }
+    ignored
+}
+
+fn create_folder_if_not_exist(folder_path: &PathBuf) -> Result<bool> {
     if !folder_path.exists() {
         std::fs::create_dir(&folder_path).with_context(|| {
             format!(
@@ -75,7 +97,24 @@ pub fn create_folder_if_not_exist(folder_path: &PathBuf) -> Result<()> {
             )
         })?;
     }
-    Ok(())
+    Ok(true)
+}
+
+// return Ok(true) if folder created or already exists, Ok(false) if ignored
+pub fn create_folder_if_not_exist_or_ignored(
+    folder_path: &PathBuf,
+    options: Arc<ProcessOptions>,
+) -> Result<bool> {
+    if ignored(
+        folder_path,
+        true,
+        &options.ignore_base_path,
+        options.ignore_matcher.as_deref(),
+    ) {
+        return Ok(false);
+    }
+
+    create_folder_if_not_exist(folder_path)
 }
 
 pub fn prettify_json(json_str: &str) -> Result<String> {

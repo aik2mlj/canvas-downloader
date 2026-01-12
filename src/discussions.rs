@@ -8,7 +8,7 @@ use crate::api::{get_canvas_api, get_pages};
 use crate::canvas::{Discussion, DiscussionResult, DiscussionView, ProcessOptions};
 use crate::files::filter_files;
 use crate::html::process_html_links;
-use crate::utils::{create_folder_if_not_exist, prettify_json};
+use crate::utils::{create_folder_if_not_exist_or_ignored, prettify_json};
 
 pub async fn process_discussions(
     (url, announcement, path): (String, bool, PathBuf),
@@ -44,7 +44,9 @@ pub async fn process_discussions(
                         "discussions"
                     };
                     let folder_path = path.join(folder_name);
-                    create_folder_if_not_exist(&folder_path)?;
+                    if !create_folder_if_not_exist_or_ignored(&folder_path, options.clone())? {
+                        continue;
+                    }
                     discussions_folder_path = Some(folder_path.clone());
                     has_discussions = true;
 
@@ -70,7 +72,12 @@ pub async fn process_discussions(
                             discussion.id,
                             sanitize_filename::sanitize(&discussion.title)
                         ));
-                        create_folder_if_not_exist(&discussion_folder_path)?;
+                        if !create_folder_if_not_exist_or_ignored(
+                            &discussion_folder_path,
+                            options.clone(),
+                        )? {
+                            continue;
+                        }
 
                         let files = discussion
                             .attachments

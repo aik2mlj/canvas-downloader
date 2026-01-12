@@ -8,7 +8,7 @@ use crate::api::{get_canvas_api, get_pages};
 use crate::canvas::{Assignment, AssignmentResult, ProcessOptions, Submission};
 use crate::files::filter_files;
 use crate::html::process_html_links;
-use crate::utils::{create_folder_if_not_exist, prettify_json};
+use crate::utils::{create_folder_if_not_exist_or_ignored, prettify_json};
 
 pub async fn process_assignments(
     (url, path): (String, PathBuf),
@@ -36,7 +36,9 @@ pub async fn process_assignments(
             Ok(AssignmentResult::Ok(assignments)) | Ok(AssignmentResult::Direct(assignments)) => {
                 for assignment in assignments {
                     let assignment_path = path.join(sanitize_filename::sanitize(&assignment.name));
-                    create_folder_if_not_exist(&assignment_path)?;
+                    if !create_folder_if_not_exist_or_ignored(&assignment_path, options.clone())? {
+                        continue;
+                    }
                     let submissions_url =
                         format!("{}assignments/{}/submissions/", url, assignment.id);
                     fork!(
