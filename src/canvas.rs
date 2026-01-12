@@ -132,7 +132,14 @@ pub struct DiscussionAuthor {
 #[derive(Clone, Debug, Deserialize)]
 pub struct DiscussionView {
     pub unread_entries: Vec<u32>,
+    pub participants: Vec<Participant>,
     pub view: Vec<Comments>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct Participant {
+    pub id: u32,
+    pub display_name: String,
 }
 
 #[derive(Clone, Debug, Deserialize)]

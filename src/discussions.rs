@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -248,7 +249,21 @@ async fn process_discussion_view(
 
     match discussion_view_result {
         Result::Ok(discussion_view) => {
-            for view in discussion_view.view {
+            // Create a mapping from user_id to display_name
+            let user_map: HashMap<u32, String> = discussion_view
+                .participants
+                .iter()
+                .map(|p| (p.id, p.display_name.clone()))
+                .collect();
+
+            for mut view in discussion_view.view {
+                // Map user_id to display_name
+                if let Some(user_id) = view.user_id {
+                    if let Some(display_name) = user_map.get(&user_id) {
+                        view.user_name = Some(display_name.clone());
+                    }
+                }
+
                 comments.push(view.clone());
 
                 if let Some(message) = view.message {
