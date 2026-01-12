@@ -164,15 +164,12 @@ fn generate_discussion_html(
 
     if let Some(ref author) = discussion.author {
         if let Some(ref display_name) = author.display_name {
-            html.push_str(&format!(
-                "            Posted by: {} | ",
-                html_escape(display_name)
-            ));
+            html.push_str(&format!("            {}", html_escape(display_name)));
         }
     }
 
     if let Some(ref posted_at) = discussion.posted_at {
-        html.push_str(&format!("Posted at: {}", html_escape(posted_at)));
+        html.push_str(&format!(" | {}", html_escape(posted_at)));
     }
 
     html.push_str("\n        </div>\n");
@@ -196,11 +193,11 @@ fn generate_discussion_html(
                 html.push_str("            <div class=\"comment-meta\">\n");
 
                 if let Some(ref user_name) = comment.user_name {
-                    html.push_str(&format!("                {} | ", html_escape(user_name)));
+                    html.push_str(&format!("                {}", html_escape(user_name)));
                 }
 
                 if let Some(ref created_at) = comment.created_at {
-                    html.push_str(&format!("{}", html_escape(created_at)));
+                    html.push_str(&format!(" | {}", html_escape(created_at)));
                 }
 
                 html.push_str("\n            </div>\n");
