@@ -140,16 +140,26 @@ fn generate_discussion_html(
         html_escape(&discussion.title)
     ));
     html.push_str(r#"    <style>
-        body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; padding: 0 20px; }
+        body { font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; font-size: 16px; line-height: 1.5; max-width: 900px; margin: 20px auto; padding: 0 20px; }
+
         .discussion-post { background: #f9f9f9; border-left: 4px solid #4CAF50; padding: 20px; margin-bottom: 30px; }
-        .discussion-title { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
-        .discussion-meta { color: #666; font-size: 14px; margin-bottom: 15px; }
-        .discussion-message { line-height: 1.6; }
+        .discussion-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 10px; }
+        .discussion-meta { color: #666; font-size: 0.875rem; margin-bottom: 10px; font-weight: 500; }
+
+        .discussion-message,
+        .comment-message { font-size: 0.95rem; }
+
+        .discussion-message p,
+        .comment-message p { margin: 0; }
+
+        .discussion-message p + p,
+        .comment-message p + p { margin-top: 0.75em; }
+
         .comments-section { margin-top: 30px; }
-        .comments-header { font-size: 20px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
-        .comment { background: #fff; border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px; }
-        .comment-meta { color: #666; font-size: 14px; margin-bottom: 10px; font-weight: bold; }
-        .comment-message { line-height: 1.6; }
+        .comments-header { font-size: 1.25rem; font-weight: 600; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+
+        .comment { background: #fff; border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 6px; }
+        .comment-meta { color: #666; font-size: 0.875rem; margin-bottom: 10px; font-weight: 500; }
     </style>
 "#);
     html.push_str("</head>\n<body>\n");

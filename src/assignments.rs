@@ -83,14 +83,19 @@ fn generate_assignment_html(assignment: &Assignment) -> String {
         html_escape(&assignment.name)
     ));
     html.push_str(r#"    <style>
-        body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; padding: 0 20px; }
-        .assignment-header { background: #f9f9f9; border-left: 4px solid #2196F3; padding: 20px; margin-bottom: 30px; }
-        .assignment-title { font-size: 24px; font-weight: bold; margin-bottom: 15px; }
-        .assignment-meta { color: #666; font-size: 14px; margin-bottom: 10px; }
-        .assignment-meta-label { font-weight: bold; display: inline-block; min-width: 140px; }
-        .assignment-description { line-height: 1.6; margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; }
-        .submission-types { display: inline-flex; gap: 8px; flex-wrap: wrap; }
-        .submission-type { background: #e3f2fd; padding: 4px 8px; border-radius: 4px; font-size: 13px; }
+        body { font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; font-size:16px; line-height:1.5; max-width:900px; margin:20px auto; padding:0 20px; }
+
+        .assignment-header { background:#f9f9f9; border-left:4px solid #2196F3; padding:20px; margin-bottom:30px; }
+        .assignment-title { font-size:1.5rem; font-weight:600; margin-bottom:12px; }
+        .assignment-meta { color:#666; font-size:0.8rem; margin-bottom:2px; }
+        .assignment-meta-label { font-weight:500; display:inline-block; min-width:8.5rem; }
+
+        .assignment-description { font-size:0.95rem; margin-top:20px; padding-top:20px; border-top:1px solid #ddd; }
+        .assignment-description p { margin:0; }
+        .assignment-description p + p { margin-top:0.75em; }
+
+        .submission-types { display:inline-flex; gap:8px; flex-wrap:wrap; }
+        .submission-type { background:#e3f2fd; padding:0px 5px; border-radius:4px; font-size:0.8rem; }
     </style>
 "#);
     html.push_str("</head>\n<body>\n");
