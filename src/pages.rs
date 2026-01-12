@@ -86,6 +86,7 @@ pub async fn process_page_body(
 ) -> Result<()> {
     let page_resp = get_canvas_api(url.clone(), &options).await?;
 
+    let title = sanitize_filename::sanitize(&title);
     let page_file_path = path.join(format!("{}.json", title));
     let mut page_file = std::fs::File::create(page_file_path.clone())
         .with_context(|| format!("Unable to create file for {:?}", page_file_path))?;
@@ -101,10 +102,11 @@ pub async fn process_page_body(
         Result::Ok(page_body) => {
             let page_html = format!(
                 "<html><head><title>{}</title></head><body>{}</body></html>",
-                page_body.title, page_body.body
+                page_body.title,
+                page_body.body.unwrap_or_default()
             );
 
-            let page_html_path = path.join(format!("{}.html", page_body.url));
+            let page_html_path = path.join(format!("{}.html", title));
             let mut page_html_file = std::fs::File::create(page_html_path.clone())
                 .with_context(|| format!("Unable to create file for {:?}", page_html_path))?;
 

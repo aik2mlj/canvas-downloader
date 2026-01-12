@@ -114,7 +114,7 @@ async fn process_module_items(
                                 {
                                     Ok(file) => {
                                         // Use filter_files to apply standard filtering logic
-                                        let filtered = filter_files(&options, &path, vec![file]);
+                                        let filtered = filter_files(&options, &path, vec![file]); // TODO: optmize
 
                                         if !filtered.is_empty() {
                                             let mut lock = options.files_to_download.lock().await;
@@ -132,12 +132,7 @@ async fn process_module_items(
                             }
                         }
                         "Page" => {
-                            if let Some(page_url) = &item.page_url {
-                                let full_page_url = format!(
-                                    "{}pages/{}",
-                                    url.replace("/modules/", "/").replace("/items", ""),
-                                    page_url
-                                );
+                            if let Some(full_page_url) = item.url {
                                 let item_path = path.join(sanitize_filename::sanitize(&item.title));
                                 create_folder_if_not_exist(&item_path)?;
 
@@ -151,14 +146,20 @@ async fn process_module_items(
                         }
                         "Assignment" => {
                             if let Some(content_id) = item.content_id {
-                                tracing::error!("Module item {} references assignment {}, consider downloading assignments separately",
-                                         item.title, content_id);
+                                tracing::debug!(
+                                    "Module item {} references assignment {}",
+                                    item.title,
+                                    content_id
+                                );
                             }
                         }
                         "Discussion" => {
                             if let Some(content_id) = item.content_id {
-                                tracing::error!("Module item {} references discussion {}, consider downloading discussions separately",
-                                         item.title, content_id);
+                                tracing::debug!(
+                                    "Module item {} references discussion {}",
+                                    item.title,
+                                    content_id
+                                );
                             }
                         }
                         "ExternalUrl" => {

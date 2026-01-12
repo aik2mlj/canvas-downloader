@@ -73,7 +73,7 @@ pub struct PageBody {
     pub page_id: u32,
     pub url: String,
     pub title: String,
-    pub body: String,
+    pub body: Option<String>,
     pub updated_at: String,
     pub locked_for_user: bool,
 }
