@@ -45,22 +45,62 @@ use videos::process_videos;
 #[derive(Parser)]
 #[command(name = "Canvas Downloader")]
 #[command(version)]
+#[command(about = "Download and organize all your Canvas course materials 📚", long_about = None)]
 struct CommandLineOptions {
-    #[arg(long, value_name = "FILE")]
+    #[arg(
+        long,
+        value_name = "FILE",
+        help = "Path to config file (default: platform-specific config locations)"
+    )]
     config: Option<PathBuf>,
-    #[arg(short = 'd', long, value_name = "FOLDER", default_value = ".")]
+
+    #[arg(
+        short = 'd',
+        long,
+        value_name = "FOLDER",
+        default_value = ".",
+        help = "Download location"
+    )]
     destination_folder: PathBuf,
-    #[arg(short = 'n', long)]
+
+    #[arg(
+        short = 'n',
+        long,
+        help = "Overwrite local files with newer Canvas versions"
+    )]
     download_newer: bool,
-    #[arg(short = 't', long, value_name = "ID", num_args(1..))]
+
+    #[arg(
+        short = 't',
+        long,
+        value_name = "ID",
+        num_args(1..),
+        help = "Term IDs to download"
+    )]
     term_ids: Option<Vec<u32>>,
-    #[arg(short = 'c', long, value_name = "NAME", num_args(1..))]
+
+    #[arg(
+        short = 'c',
+        long,
+        value_name = "NAME",
+        num_args(1..),
+        help = "Course names or codes to download - exact match"
+    )]
     course_names: Option<Vec<String>>,
-    #[arg(short = 'i', long, value_name = "FILE")]
-    ignore_file: Option<PathBuf>,
-    #[arg(long)]
+
+    #[arg(
+        short = 'i',
+        long,
+        value_name = "FILE",
+        default_value = ".canvasignore",
+        help = "Path to ignore patterns file"
+    )]
+    ignore_file: PathBuf,
+
+    #[arg(long, help = "Preview downloads without executing")]
     dry_run: bool,
-    #[arg(short = 'v', long)]
+
+    #[arg(short = 'v', long, help = "Enable debug logging")]
     verbose: bool,
 }
 
@@ -152,23 +192,14 @@ async fn main() -> Result<()> {
         .with_context(|| "Failed to get user info")?;
     let courses_link = format!("{}/api/v1/users/self/courses", cred.canvas_url);
 
-    // Load ignore file if provided, or look for .canvasignore in CWD
-    let ignore_matcher = if let Some(ref ignore_file_path) = args.ignore_file {
+    // Load ignore file if it exists
+    let ignore_matcher = if args.ignore_file.exists() {
         Some(Arc::new(load_ignore_file(
-            ignore_file_path,
+            &args.ignore_file,
             &args.destination_folder,
         )?))
     } else {
-        // Try to load .canvasignore from current directory if it exists
-        let default_ignore = PathBuf::from(".canvasignore");
-        if default_ignore.exists() {
-            Some(Arc::new(load_ignore_file(
-                &default_ignore,
-                &args.destination_folder,
-            )?))
-        } else {
-            None
-        }
+        None
     };
 
     let options = Arc::new(ProcessOptions {
@@ -332,8 +363,8 @@ async fn main() -> Result<()> {
         }
 
         println!("[DRY RUN] Active filters:");
-        if let Some(ref ignore_file_path) = args.ignore_file {
-            println!("  - Ignore file: {}", ignore_file_path.display());
+        if args.ignore_file.exists() {
+            println!("  - Ignore file: {}", args.ignore_file.display());
         } else {
             println!("  - Ignore file: none");
         }

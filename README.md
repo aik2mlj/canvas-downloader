@@ -1,6 +1,6 @@
 # Canvas Downloader
 
-A command-line tool to download and synchronize all your Canvas course materials—files, syllabi, pages, modules, assignments, discussions, and announcements—into a clean local folder structure. Made in async Rust⚡.
+A command-line tool to download and organize all your Canvas course materials—files, syllabi, pages, modules, assignments, discussions, and announcements—into a clean local folder structure. Made in async Rust⚡.
 
 This is a maintained fork of [this project](https://github.com/bnjmnt4n/canvas-downloader).
 
@@ -146,12 +146,12 @@ Without `-v`, only important progress messages are shown (info level).
 Usage: canvas-downloader [OPTIONS]
 
 Options:
-      --config <FILE>                Path to config file (TOML format)
+      --config <FILE>                Path to config file (default: platform-specific config locations)
   -d, --destination-folder <FOLDER>  Download location [default: .]
   -n, --download-newer               Overwrite local files with newer Canvas versions
   -t, --term-ids <ID>...             Term IDs to download
-  -c, --course-names <NAME>...       Course names or codes to download (exact match)
-  -i, --ignore-file <FILE>           Ignore patterns file
+  -c, --course-names <NAME>...       Course names or codes to download - exact match
+  -i, --ignore-file <FILE>           Path to ignore patterns file [default: .canvasignore]
       --dry-run                      Preview downloads without executing
   -v, --verbose                      Enable debug logging
   -h, --help                         Print help
