@@ -6,7 +6,7 @@ use anyhow::{Context, Result};
 
 use crate::api::get_canvas_api;
 use crate::canvas::{ProcessOptions, Syllabus};
-use crate::utils::prettify_json;
+use crate::utils::{get_raw_json_path, prettify_json};
 
 pub async fn process_syllabus(
     (course_id, path): (u32, PathBuf),
@@ -31,18 +31,24 @@ pub async fn process_syllabus(
             if let Some(ref body) = syllabus.syllabus_body {
                 if !body.trim().is_empty() {
                     // Save JSON file
-                    let syllabus_json_path = path.join("syllabus.json");
-                    let mut json_file = std::fs::File::create(syllabus_json_path.clone())
-                        .with_context(|| {
-                            format!("Unable to create file for {:?}", syllabus_json_path)
-                        })?;
-                    let pretty_json =
-                        prettify_json(&syllabus_text).unwrap_or(syllabus_text.clone());
-                    json_file
-                        .write_all(pretty_json.as_bytes())
-                        .with_context(|| {
-                            format!("Could not write to file {:?}", syllabus_json_path)
-                        })?;
+                    if let Some(syllabus_json_path) = get_raw_json_path(
+                        &path,
+                        "syllabus.json",
+                        &options.base_path,
+                        options.save_json,
+                    )? {
+                        let mut json_file = std::fs::File::create(syllabus_json_path.clone())
+                            .with_context(|| {
+                                format!("Unable to create file for {:?}", syllabus_json_path)
+                            })?;
+                        let pretty_json =
+                            prettify_json(&syllabus_text).unwrap_or(syllabus_text.clone());
+                        json_file
+                            .write_all(pretty_json.as_bytes())
+                            .with_context(|| {
+                                format!("Could not write to file {:?}", syllabus_json_path)
+                            })?;
+                    }
 
                     // Save HTML file
                     let syllabus_html = format!(

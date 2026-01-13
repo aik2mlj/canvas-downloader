@@ -15,7 +15,7 @@ use serde_json::json;
 use crate::api::get_canvas_api;
 use crate::canvas::{File, PanoptoDeliveryInfo, PanoptoSessionInfo, ProcessOptions, Session};
 use crate::files::filter_files;
-use crate::utils::create_folder_if_not_exist_or_ignored;
+use crate::utils::{create_folder_if_not_exist_or_ignored, get_raw_json_path, prettify_json};
 
 pub async fn process_videos(
     (url, id, path): (String, u32, PathBuf),
@@ -131,13 +131,30 @@ async fn process_video_folder(
         }))
         .send()
         .await?;
-    // write into videos.json
+    // write into folder.json
     let folderinfo = folderinfo_result.text().await?;
-    let mut file = std::fs::File::create(path.join("folder.json"))?;
-    file.write_all(folderinfo.as_bytes())?;
+    if let Some(folder_json_path) = get_raw_json_path(
+        &path,
+        "folder.json",
+        &options.base_path,
+        options.save_json,
+    )? {
+        let mut file = std::fs::File::create(folder_json_path)?;
+        let pretty_json = prettify_json(&folderinfo).unwrap_or(folderinfo.clone());
+        file.write_all(pretty_json.as_bytes())?;
+    }
 
     // write into sessions.json
-    let mut sessions_file = std::fs::File::create(path.join("sessions.json"))?;
+    let sessions_json = get_raw_json_path(
+        &path,
+        "sessions.json",
+        &options.base_path,
+        options.save_json,
+    )?;
+    let mut sessions_file = sessions_json
+        .as_ref()
+        .map(|p| std::fs::File::create(p.clone()).ok())
+        .flatten();
 
     for i in 0.. {
         let sessions_result = client
@@ -170,7 +187,10 @@ async fn process_video_folder(
             .await?;
 
         let sessions_text = sessions_result.text().await?;
-        sessions_file.write_all(sessions_text.as_bytes())?;
+        if let Some(ref mut file) = sessions_file {
+            let pretty_json = prettify_json(&sessions_text).unwrap_or(sessions_text.clone());
+            file.write_all(pretty_json.as_bytes())?;
+        }
 
         let folder_sessions = serde_json::from_str::<serde_json::Value>(&sessions_text)?;
         let folder_sessions_results = folder_sessions

@@ -40,7 +40,9 @@ use modules::process_modules;
 use pages::process_pages;
 use syllabus::process_syllabus;
 use users::process_users;
-use utils::{create_folder_if_not_exist_or_ignored, format_bytes, print_all_courses_by_term};
+use utils::{
+    create_folder_if_not_exist_or_ignored, format_bytes, ignored, print_all_courses_by_term,
+};
 use videos::process_videos;
 
 #[derive(Subcommand)]
@@ -113,6 +115,9 @@ struct CommandLineOptions {
     #[arg(long, help = "Preview downloads without executing")]
     dry_run: bool,
 
+    #[arg(long, default_value = "false", help = "Do not save raw JSON responses")]
+    no_raw: bool,
+
     #[arg(short = 'v', long, help = "Enable debug logging")]
     verbose: bool,
 }
@@ -160,7 +165,7 @@ fn find_config_file(config_path: Option<PathBuf>) -> Result<PathBuf> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let args = CommandLineOptions::parse();
+    let mut args = CommandLineOptions::parse();
 
     // Handle subcommands
     if let Some(command) = args.command {
@@ -226,6 +231,27 @@ async fn main() -> Result<()> {
         None
     };
 
+    // create raw json folder
+    let raw_folder_path = args.destination_folder.join("raw");
+    if args.no_raw
+        || ignored(
+            &raw_folder_path,
+            true,
+            &args.destination_folder,
+            ignore_matcher.as_deref(),
+        )
+    {
+        // if ignored by ignore file, disable saving json
+        args.no_raw = true;
+    } else if !raw_folder_path.exists() {
+        std::fs::create_dir(&raw_folder_path).with_context(|| {
+            format!(
+                "Failed to create raw JSON directory: {}",
+                raw_folder_path.to_string_lossy()
+            )
+        })?;
+    }
+
     let options = Arc::new(ProcessOptions {
         canvas_token: cred.canvas_token.clone(),
         canvas_url: cred.canvas_url.clone(),
@@ -235,8 +261,9 @@ async fn main() -> Result<()> {
         files_to_download: tokio::sync::Mutex::new(Vec::new()),
         download_newer: args.download_newer,
         ignore_matcher,
-        ignore_base_path: args.destination_folder.clone(),
+        base_path: args.destination_folder.clone(),
         dry_run: args.dry_run,
+        save_json: !args.no_raw,
         // Download
         progress_bars: indicatif::MultiProgress::new(),
         progress_style: {
@@ -534,10 +561,9 @@ async fn process_data(
             options.clone()
         );
     }
-    let users_path = path.join("users.json");
     fork!(
         process_users,
-        (url.clone(), users_path),
+        (url.clone(), path.clone()),
         (String, PathBuf),
         options.clone()
     );

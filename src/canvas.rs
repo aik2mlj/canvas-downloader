@@ -275,8 +275,9 @@ pub struct ProcessOptions {
     pub download_newer: bool,
     pub files_to_download: Mutex<Vec<File>>,
     pub ignore_matcher: Option<std::sync::Arc<ignore::gitignore::Gitignore>>,
-    pub ignore_base_path: std::path::PathBuf,
+    pub base_path: std::path::PathBuf,
     pub dry_run: bool,
+    pub save_json: bool,
     // Download
     pub progress_bars: indicatif::MultiProgress,
     pub progress_style: indicatif::ProgressStyle,

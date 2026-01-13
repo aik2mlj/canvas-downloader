@@ -8,7 +8,7 @@ use crate::api::get_pages;
 use crate::canvas::{ModuleItemResult, ModuleResult, ProcessOptions};
 use crate::files::{filter_files, process_file_id};
 use crate::pages::process_page_body;
-use crate::utils::{create_folder_if_not_exist_or_ignored, prettify_json};
+use crate::utils::{create_folder_if_not_exist_or_ignored, get_raw_json_path, prettify_json};
 
 pub async fn process_modules(
     (url, path): (String, PathBuf),
@@ -36,15 +36,21 @@ pub async fn process_modules(
                     has_modules = true;
 
                     // Create modules.json file
-                    let module_json = modules_path.join("modules.json");
-                    let mut module_file = std::fs::File::create(module_json.clone())
-                        .with_context(|| format!("Unable to create file for {:?}", module_json))?;
-                    let pretty_json = prettify_json(&module_body).unwrap_or(module_body.clone());
-                    module_file
-                        .write_all(pretty_json.as_bytes())
-                        .with_context(|| {
-                            format!("Unable to write to file for {:?}", module_json)
-                        })?;
+                    if let Some(module_json) = get_raw_json_path(
+                        &modules_path,
+                        "modules.json",
+                        &options.base_path,
+                        options.save_json,
+                    )? {
+                        let mut module_file = std::fs::File::create(module_json.clone())
+                            .with_context(|| format!("Unable to create file for {:?}", module_json))?;
+                        let pretty_json = prettify_json(&module_body).unwrap_or(module_body.clone());
+                        module_file
+                            .write_all(pretty_json.as_bytes())
+                            .with_context(|| {
+                                format!("Unable to write to file for {:?}", module_json)
+                            })?;
+                    }
                 }
 
                 for module in modules {
@@ -90,14 +96,21 @@ async fn process_module_items(
 
     for page in pages {
         let items_body = page.text().await?;
-        let items_json = path.join("module_items.json");
-        let mut items_file = std::fs::File::create(items_json.clone())
-            .with_context(|| format!("Unable to create file for {:?}", items_json))?;
 
-        let pretty_json = prettify_json(&items_body).unwrap_or(items_body.clone());
-        items_file
-            .write_all(pretty_json.as_bytes())
-            .with_context(|| format!("Unable to write to file for {:?}", items_json))?;
+        if let Some(items_json) = get_raw_json_path(
+            &path,
+            "module_items.json",
+            &options.base_path,
+            options.save_json,
+        )? {
+            let mut items_file = std::fs::File::create(items_json.clone())
+                .with_context(|| format!("Unable to create file for {:?}", items_json))?;
+
+            let pretty_json = prettify_json(&items_body).unwrap_or(items_body.clone());
+            items_file
+                .write_all(pretty_json.as_bytes())
+                .with_context(|| format!("Unable to write to file for {:?}", items_json))?;
+        }
 
         let items_result = serde_json::from_str::<ModuleItemResult>(&items_body);
 

@@ -70,7 +70,7 @@ pub fn print_all_courses_by_term(courses: &[Course]) {
 pub fn ignored(
     filepath: &PathBuf,
     is_dir: bool,
-    ignore_base_path: &PathBuf,
+    base_path: &PathBuf,
     ignore_matcher: Option<&ignore::gitignore::Gitignore>,
 ) -> bool {
     let matcher = match ignore_matcher {
@@ -78,7 +78,7 @@ pub fn ignored(
         None => return false,
     };
 
-    let relative_path = filepath.strip_prefix(ignore_base_path).unwrap_or(filepath);
+    let relative_path = filepath.strip_prefix(base_path).unwrap_or(filepath);
     let ignored = matcher
         .matched_path_or_any_parents(relative_path, is_dir)
         .is_ignore();
@@ -90,7 +90,7 @@ pub fn ignored(
 
 fn create_folder_if_not_exist(folder_path: &PathBuf) -> Result<bool> {
     if !folder_path.exists() {
-        std::fs::create_dir(&folder_path).with_context(|| {
+        std::fs::create_dir_all(&folder_path).with_context(|| {
             format!(
                 "Failed to create directory: {}",
                 folder_path.to_string_lossy()
@@ -108,7 +108,7 @@ pub fn create_folder_if_not_exist_or_ignored(
     if ignored(
         folder_path,
         true,
-        &options.ignore_base_path,
+        &options.base_path,
         options.ignore_matcher.as_deref(),
     ) {
         return Ok(false);
@@ -120,6 +120,34 @@ pub fn create_folder_if_not_exist_or_ignored(
 pub fn prettify_json(json_str: &str) -> Result<String> {
     let value: Value = serde_json::from_str(json_str)?;
     Ok(serde_json::to_string_pretty(&value)?)
+}
+
+/// Get the path for a raw JSON file in a parallel "raw" folder structure
+/// Returns None if save_json is false
+///
+/// Example: if current_path is "/downloads/course1/assignments/Assignment 1"
+/// and base_download_path is "/downloads", the raw path will be
+/// "/downloads/raw/course1/assignments/Assignment 1/{filename}"
+pub fn get_raw_json_path(
+    current_path: &PathBuf,
+    filename: &str,
+    base_path: &PathBuf,
+    save_json: bool,
+) -> Result<Option<PathBuf>> {
+    if !save_json {
+        return Ok(None);
+    }
+
+    // Calculate relative path from base to current location
+    let relative_path = current_path
+        .strip_prefix(base_path)
+        .unwrap_or(current_path.as_path());
+
+    // Create the mirrored structure in parallel "raw" folder
+    let raw_path = base_path.join("raw").join(relative_path);
+
+    create_folder_if_not_exist(&raw_path)?;
+    Ok(Some(raw_path.join(filename)))
 }
 
 pub fn format_bytes(bytes: u64) -> String {

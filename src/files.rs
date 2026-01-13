@@ -131,7 +131,7 @@ pub async fn process_folders(
                     if ignored(
                         &folder_path,
                         true,
-                        &options.ignore_base_path,
+                        &options.base_path,
                         options.ignore_matcher.as_deref(),
                     ) {
                         continue;
@@ -261,7 +261,7 @@ pub fn filter_files(options: &ProcessOptions, path: &Path, files: Vec<File>) -> 
             !ignored(
                 &f.filepath,
                 false,
-                &options.ignore_base_path,
+                &options.base_path,
                 options.ignore_matcher.as_deref(),
             )
         })

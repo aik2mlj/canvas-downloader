@@ -9,7 +9,7 @@ use crate::api::{get_canvas_api, get_pages};
 use crate::canvas::{Discussion, DiscussionResult, DiscussionView, ProcessOptions};
 use crate::files::filter_files;
 use crate::html::process_html_links;
-use crate::utils::{create_folder_if_not_exist_or_ignored, prettify_json};
+use crate::utils::{create_folder_if_not_exist_or_ignored, get_raw_json_path, prettify_json};
 
 pub async fn process_discussions(
     (url, announcement, path): (String, bool, PathBuf),
@@ -52,17 +52,23 @@ pub async fn process_discussions(
                     has_discussions = true;
 
                     // Create discussions.json file
-                    let discussion_path = folder_path.join("discussions.json");
-                    let mut discussion_file = std::fs::File::create(discussion_path.clone())
-                        .with_context(|| {
-                            format!("Unable to create file for {:?}", discussion_path)
-                        })?;
-                    let pretty_json = prettify_json(&page_body).unwrap_or(page_body.clone());
-                    discussion_file
-                        .write_all(pretty_json.as_bytes())
-                        .with_context(|| {
-                            format!("Unable to write to file for {:?}", discussion_path)
-                        })?;
+                    if let Some(discussion_path) = get_raw_json_path(
+                        &folder_path,
+                        "discussions.json",
+                        &options.base_path,
+                        options.save_json,
+                    )? {
+                        let mut discussion_file = std::fs::File::create(discussion_path.clone())
+                            .with_context(|| {
+                                format!("Unable to create file for {:?}", discussion_path)
+                            })?;
+                        let pretty_json = prettify_json(&page_body).unwrap_or(page_body.clone());
+                        discussion_file
+                            .write_all(pretty_json.as_bytes())
+                            .with_context(|| {
+                                format!("Unable to write to file for {:?}", discussion_path)
+                            })?;
+                    }
                 }
 
                 for discussion in discussions {
@@ -241,14 +247,18 @@ async fn process_discussion_view(
     let resp = get_canvas_api(url.clone(), &options).await?;
     let discussion_view_body = resp.text().await?;
 
-    let discussion_view_json = path.join("view.json");
-    let mut discussion_view_file = std::fs::File::create(discussion_view_json.clone())
-        .with_context(|| format!("Unable to create file for {:?}", discussion_view_json))?;
+    if let Some(discussion_view_json) =
+        get_raw_json_path(&path, "view.json", &options.base_path, options.save_json)?
+    {
+        let mut discussion_view_file = std::fs::File::create(discussion_view_json.clone())
+            .with_context(|| format!("Unable to create file for {:?}", discussion_view_json))?;
 
-    let pretty_json = prettify_json(&discussion_view_body).unwrap_or(discussion_view_body.clone());
-    discussion_view_file
-        .write_all(pretty_json.as_bytes())
-        .with_context(|| format!("Unable to write to file for {:?}", discussion_view_json))?;
+        let pretty_json =
+            prettify_json(&discussion_view_body).unwrap_or(discussion_view_body.clone());
+        discussion_view_file
+            .write_all(pretty_json.as_bytes())
+            .with_context(|| format!("Unable to write to file for {:?}", discussion_view_json))?;
+    }
 
     let discussion_view_result = serde_json::from_str::<DiscussionView>(&discussion_view_body);
     let mut attachments_all = Vec::new();

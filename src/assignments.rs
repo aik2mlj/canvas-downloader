@@ -8,7 +8,7 @@ use crate::api::{get_canvas_api, get_pages};
 use crate::canvas::{Assignment, AssignmentResult, ProcessOptions, Submission};
 use crate::files::filter_files;
 use crate::html::process_html_links;
-use crate::utils::{create_folder_if_not_exist_or_ignored, prettify_json};
+use crate::utils::{create_folder_if_not_exist_or_ignored, get_raw_json_path, prettify_json};
 
 pub async fn process_assignments(
     (url, path): (String, PathBuf),
@@ -17,18 +17,26 @@ pub async fn process_assignments(
     let assignments_url = format!("{}assignments?include[]=submission&include[]=assignment_visibility&include[]=all_dates&include[]=overrides&include[]=observed_users&include[]=can_edit&include[]=score_statistics", url);
     let pages = get_pages(assignments_url, &options).await?;
 
-    let assignments_json = path.join("assignments.json");
-    let mut assignments_file = std::fs::File::create(assignments_json.clone())
-        .with_context(|| format!("Unable to create file for {:?}", assignments_json))?;
+    let assignments_json = get_raw_json_path(
+        &path,
+        "assignments.json",
+        &options.base_path,
+        options.save_json,
+    )?;
+    let mut assignments_file = assignments_json
+        .as_ref()
+        .map(|p| std::fs::File::create(p.clone()).ok())
+        .flatten();
 
     for pg in pages {
         let uri = pg.url().to_string();
         let page_body = pg.text().await?;
 
-        let pretty_json = prettify_json(&page_body).unwrap_or(page_body.clone());
-        assignments_file
-            .write_all(pretty_json.as_bytes())
-            .with_context(|| format!("Unable to write to file for {:?}", assignments_json))?;
+        if let Some(ref mut file) = assignments_file {
+            let pretty_json = prettify_json(&page_body).unwrap_or(page_body.clone());
+            file.write_all(pretty_json.as_bytes())
+                .with_context(|| format!("Unable to write to file for {:?}", assignments_json))?;
+        }
 
         let assignment_result = serde_json::from_str::<AssignmentResult>(&page_body);
 
@@ -168,14 +176,21 @@ async fn process_submissions(
 
     let resp = get_canvas_api(submissions_url, &options).await?;
     let submissions_body = resp.text().await?;
-    let submissions_json = path.join("submission.json");
-    let mut submissions_file = std::fs::File::create(submissions_json.clone())
-        .with_context(|| format!("Unable to create file for {:?}", submissions_json))?;
 
-    let pretty_json = prettify_json(&submissions_body).unwrap_or(submissions_body.clone());
-    submissions_file
-        .write_all(pretty_json.as_bytes())
-        .with_context(|| format!("Unable to write to file for {:?}", submissions_json))?;
+    if let Some(submissions_json) = get_raw_json_path(
+        &path,
+        "submission.json",
+        &options.base_path,
+        options.save_json,
+    )? {
+        let mut submissions_file = std::fs::File::create(submissions_json.clone())
+            .with_context(|| format!("Unable to create file for {:?}", submissions_json))?;
+
+        let pretty_json = prettify_json(&submissions_body).unwrap_or(submissions_body.clone());
+        submissions_file
+            .write_all(pretty_json.as_bytes())
+            .with_context(|| format!("Unable to write to file for {:?}", submissions_json))?;
+    }
 
     let submissions_result = serde_json::from_str::<Submission>(&submissions_body);
     match submissions_result {

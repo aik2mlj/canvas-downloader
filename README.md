@@ -153,6 +153,7 @@ Options:
   -c, --course-names <NAME>...       Course names or codes to download - exact match
   -i, --ignore-file <FILE>           Path to ignore patterns file [default: .canvasignore]
       --dry-run                      Preview downloads without executing
+      --no-raw                       Do not save raw JSON responses
   -v, --verbose                      Enable debug logging
   -h, --help                         Print help
   -V, --version                      Print version
