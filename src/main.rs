@@ -24,7 +24,8 @@ use std::sync::{
 use std::time::Duration;
 
 use anyhow::{Context, Result};
-use clap::Parser;
+use clap::{CommandFactory, Parser, Subcommand};
+use clap_complete::{generate, Shell};
 use futures::future::ready;
 use futures::{stream, StreamExt, TryStreamExt};
 use ignore::gitignore::GitignoreBuilder;
@@ -42,11 +43,23 @@ use users::process_users;
 use utils::{create_folder_if_not_exist_or_ignored, format_bytes, print_all_courses_by_term};
 use videos::process_videos;
 
+#[derive(Subcommand)]
+enum Commands {
+    /// Generate shell completion scripts
+    Completions {
+        /// The shell to generate completions for
+        #[arg(value_enum)]
+        shell: Shell,
+    },
+}
+
 #[derive(Parser)]
 #[command(name = "Canvas Downloader")]
 #[command(version)]
 #[command(about = "Download and organize all your Canvas course materials 📚", long_about = None)]
 struct CommandLineOptions {
+    #[command(subcommand)]
+    command: Option<Commands>,
     #[arg(
         long,
         value_name = "FILE",
@@ -148,6 +161,17 @@ fn find_config_file(config_path: Option<PathBuf>) -> Result<PathBuf> {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = CommandLineOptions::parse();
+
+    // Handle subcommands
+    if let Some(command) = args.command {
+        match command {
+            Commands::Completions { shell } => {
+                let mut cmd = CommandLineOptions::command();
+                generate(shell, &mut cmd, "canvas-downloader", &mut std::io::stdout());
+                return Ok(());
+            }
+        }
+    }
 
     // Initialize tracing
     let filter = if args.verbose {
