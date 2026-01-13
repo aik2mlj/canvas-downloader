@@ -10,11 +10,15 @@ use select::predicate::Name;
 
 use crate::canvas::{File, ProcessOptions};
 use crate::files::{filter_files, prepare_link_for_download, process_file_id};
+use crate::utils::create_folder_if_not_exist_or_ignored;
 
+/// process_html_links processes HTML content to find links and add them to the download queue.
+/// will create a folder of the given folder_name under path if there are any files to download.
 pub async fn process_html_links(
-    (html, path): (String, PathBuf),
+    (html, path, folder_name): (String, PathBuf, String),
     options: Arc<ProcessOptions>,
 ) -> Result<()> {
+    let destination_path = path.join(sanitize_filename::sanitize(&folder_name));
     // If file link is part of course files
     let re = Regex::new(r"/courses/[0-9]+/files/([0-9]+)").unwrap();
     let file_links = Document::from(html.as_str())
@@ -36,7 +40,7 @@ pub async fn process_html_links(
     let mut link_files = join_all(
         file_links
             .into_iter()
-            .map(|x| process_file_id((x, path.clone()), options.clone())),
+            .map(|x| process_file_id((x, destination_path.clone()), options.clone())),
     )
     .await
     .into_iter()
@@ -56,7 +60,7 @@ pub async fn process_html_links(
         join_all(
             image_links
                 .into_iter()
-                .map(|x| prepare_link_for_download((x, path.clone()), options.clone())),
+                .map(|x| prepare_link_for_download((x, destination_path.clone()), options.clone())),
         )
         .await
         .into_iter()
@@ -65,9 +69,15 @@ pub async fn process_html_links(
         .as_mut(),
     );
 
-    let mut filtered_files = filter_files(&options, &path, link_files);
-    let mut lock = options.files_to_download.lock().await;
-    lock.append(&mut filtered_files);
+    let mut filtered_files = filter_files(&options, &destination_path, link_files);
+
+    if !filtered_files.is_empty() {
+        // create folder if there are files to download
+        create_folder_if_not_exist_or_ignored(&destination_path, options.clone())?;
+
+        let mut lock = options.files_to_download.lock().await;
+        lock.append(&mut filtered_files);
+    }
 
     Ok(())
 }

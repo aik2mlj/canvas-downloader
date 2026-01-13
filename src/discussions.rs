@@ -6,7 +6,7 @@ use std::sync::Arc;
 use anyhow::{Context, Result};
 
 use crate::api::{get_canvas_api, get_pages};
-use crate::canvas::{Discussion, DiscussionResult, DiscussionView, ProcessOptions};
+use crate::canvas::{Discussion, DiscussionResult, DiscussionView, File, ProcessOptions};
 use crate::files::filter_files;
 use crate::html::process_html_links;
 use crate::utils::{create_folder_if_not_exist_or_ignored, get_raw_json_path, prettify_json};
@@ -73,20 +73,11 @@ pub async fn process_discussions(
 
                 for discussion in discussions {
                     if let Some(ref folder_path) = discussions_folder_path {
-                        // download attachments
-                        let discussion_folder_path = folder_path.join(format!(
-                            "{}_{}",
-                            discussion.id,
-                            sanitize_filename::sanitize(&discussion.title)
-                        ));
-                        if !create_folder_if_not_exist_or_ignored(
-                            &discussion_folder_path,
-                            options.clone(),
-                        )? {
-                            continue;
-                        }
+                        // download attachments (TODO: not sure if this is needed)
+                        let discussion_folder_path =
+                            folder_path.join(sanitize_filename::sanitize(&discussion.title));
 
-                        let files = discussion
+                        let files: Vec<File> = discussion
                             .attachments
                             .clone()
                             .into_iter()
@@ -95,23 +86,33 @@ pub async fn process_discussions(
                                 f
                             })
                             .collect();
-                        {
-                            let mut filtered_files =
-                                filter_files(&options, &discussion_folder_path, files);
+                        let mut filtered_files =
+                            filter_files(&options, &discussion_folder_path, files);
+                        if !filtered_files.is_empty() {
+                            // create folder for discussion if there are files to download
+                            create_folder_if_not_exist_or_ignored(
+                                &discussion_folder_path,
+                                options.clone(),
+                            )?;
+                            // add files to download list
                             let mut lock = options.files_to_download.lock().await;
                             lock.append(&mut filtered_files);
                         }
 
                         fork!(
                             process_html_links,
-                            (discussion.message.clone(), discussion_folder_path.clone()),
-                            (String, PathBuf),
+                            (
+                                discussion.message.clone(),
+                                folder_path.clone(),
+                                discussion.title.clone()
+                            ),
+                            (String, PathBuf, String),
                             options.clone()
                         );
                         let view_url = format!("{}discussion_topics/{}/view", url, discussion.id);
                         fork!(
                             process_discussion_view,
-                            (view_url, discussion_folder_path, discussion),
+                            (view_url, folder_path.clone(), discussion),
                             (String, PathBuf, Discussion),
                             options.clone()
                         )
@@ -247,9 +248,13 @@ async fn process_discussion_view(
     let resp = get_canvas_api(url.clone(), &options).await?;
     let discussion_view_body = resp.text().await?;
 
-    if let Some(discussion_view_json) =
-        get_raw_json_path(&path, "view.json", &options.base_path, options.save_json)?
-    {
+    let discussion_name = sanitize_filename::sanitize(&discussion.title);
+    if let Some(discussion_view_json) = get_raw_json_path(
+        &path,
+        &format!("{discussion_name}.json"),
+        &options.base_path,
+        options.save_json,
+    )? {
         let mut discussion_view_file = std::fs::File::create(discussion_view_json.clone())
             .with_context(|| format!("Unable to create file for {:?}", discussion_view_json))?;
 
@@ -286,8 +291,8 @@ async fn process_discussion_view(
                 if let Some(message) = view.message {
                     fork!(
                         process_html_links,
-                        (message, path.clone()),
-                        (String, PathBuf),
+                        (message, path.clone(), discussion_name.clone()),
+                        (String, PathBuf, String),
                         options.clone()
                     )
                 }
@@ -301,7 +306,7 @@ async fn process_discussion_view(
 
             // Generate HTML file with discussion and comments
             let html_content = generate_discussion_html(&discussion, &comments);
-            let html_path = path.join("discussion.html");
+            let html_path = path.join(format!("{discussion_name}.html"));
             let mut html_file = std::fs::File::create(html_path.clone())
                 .with_context(|| format!("Unable to create file for {:?}", html_path))?;
             html_file
@@ -320,9 +325,15 @@ async fn process_discussion_view(
             f
         })
         .collect();
-    let mut filtered_files = filter_files(&options, &path, files);
-    let mut lock = options.files_to_download.lock().await;
-    lock.append(&mut filtered_files);
+    let discussion_folder_path = path.join(discussion_name);
+    let mut filtered_files = filter_files(&options, &discussion_folder_path, files);
+    if !filtered_files.is_empty() {
+        // create folder for discussion if there are files to download
+        create_folder_if_not_exist_or_ignored(&discussion_folder_path, options.clone())?;
+
+        let mut lock = options.files_to_download.lock().await;
+        lock.append(&mut filtered_files);
+    }
 
     Ok(())
 }

@@ -8,7 +8,7 @@ use crate::api::{get_canvas_api, get_pages};
 use crate::canvas::{Assignment, AssignmentResult, ProcessOptions, Submission};
 use crate::files::filter_files;
 use crate::html::process_html_links;
-use crate::utils::{create_folder_if_not_exist_or_ignored, get_raw_json_path, prettify_json};
+use crate::utils::{get_raw_json_path, prettify_json};
 
 pub async fn process_assignments(
     (url, path): (String, PathBuf),
@@ -43,22 +43,23 @@ pub async fn process_assignments(
         match assignment_result {
             Ok(AssignmentResult::Ok(assignments)) | Ok(AssignmentResult::Direct(assignments)) => {
                 for assignment in assignments {
-                    let assignment_path = path.join(sanitize_filename::sanitize(&assignment.name));
-                    if !create_folder_if_not_exist_or_ignored(&assignment_path, options.clone())? {
-                        continue;
-                    }
+                    // let assignment_path = path.join(sanitize_filename::sanitize(&assignment.name));
                     let submissions_url =
                         format!("{}assignments/{}/submissions/", url, assignment.id);
                     fork!(
                         process_submissions,
-                        (submissions_url, assignment_path.clone(), assignment.clone()),
+                        (submissions_url, path.clone(), assignment.clone()),
                         (String, PathBuf, Assignment),
                         options.clone()
                     );
                     fork!(
                         process_html_links,
-                        (assignment.description.clone(), assignment_path),
-                        (String, PathBuf),
+                        (
+                            assignment.description.clone(),
+                            path.clone(),
+                            assignment.name.clone()
+                        ),
+                        (String, PathBuf, String),
                         options.clone()
                     );
                 }
@@ -177,9 +178,10 @@ async fn process_submissions(
     let resp = get_canvas_api(submissions_url, &options).await?;
     let submissions_body = resp.text().await?;
 
+    let assignment_name = sanitize_filename::sanitize(&assignment.name);
     if let Some(submissions_json) = get_raw_json_path(
         &path,
-        "submission.json",
+        &format!("{assignment_name}.json"),
         &options.base_path,
         options.save_json,
     )? {
@@ -206,7 +208,7 @@ async fn process_submissions(
 
     // Generate HTML file for the assignment
     let html_content = generate_assignment_html(&assignment);
-    let html_path = path.join("assignment.html");
+    let html_path = path.join(format!("{assignment_name}.html"));
     let mut html_file = std::fs::File::create(html_path.clone())
         .with_context(|| format!("Unable to create file for {:?}", html_path))?;
     html_file

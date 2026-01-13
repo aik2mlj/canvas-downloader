@@ -59,15 +59,9 @@ pub async fn process_pages(
                 for page in pages {
                     if let Some(ref pages_path) = pages_folder_path {
                         let page_url = format!("{}pages/{}", url, page.url);
-                        let page_file_path =
-                            pages_path.join(sanitize_filename::sanitize(&page.title));
-                        if !create_folder_if_not_exist_or_ignored(&page_file_path, options.clone())?
-                        {
-                            continue;
-                        }
                         fork!(
                             process_page_body,
-                            (page_url, page.title, page_file_path),
+                            (page_url, page.title, pages_path.clone()),
                             (String, String, PathBuf),
                             options.clone()
                         )
@@ -135,15 +129,13 @@ pub async fn process_page_body(
 
             fork!(
                 process_html_links,
-                (page_html, path),
-                (String, PathBuf),
+                (page_html, path, title),
+                (String, PathBuf, String),
                 options.clone()
             )
         }
         Result::Err(e) => {
-            tracing::error!(
-                "Error when parsing page body at link:{url}, path:{path:?}\n{e:?}",
-            );
+            tracing::error!("Error when parsing page body at link:{url}, path:{path:?}\n{e:?}",);
         }
     }
     Ok(())
