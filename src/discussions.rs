@@ -52,21 +52,21 @@ pub async fn process_discussions(
                     has_discussions = true;
 
                     // Create discussions.json file
-                    if let Some(discussion_path) = get_raw_json_path(
+                    if let Some(discussions_json_path) = get_raw_json_path(
                         &folder_path,
-                        "discussions.json",
+                        &format!("{folder_name}.json"),
                         &options.base_path,
                         options.save_json,
                     )? {
-                        let mut discussion_file = std::fs::File::create(discussion_path.clone())
-                            .with_context(|| {
-                                format!("Unable to create file for {:?}", discussion_path)
-                            })?;
+                        let mut discussions_json_file =
+                            std::fs::File::create(discussions_json_path.clone()).with_context(
+                                || format!("Unable to create file for {:?}", discussions_json_path),
+                            )?;
                         let pretty_json = prettify_json(&page_body).unwrap_or(page_body.clone());
-                        discussion_file
+                        discussions_json_file
                             .write_all(pretty_json.as_bytes())
                             .with_context(|| {
-                                format!("Unable to write to file for {:?}", discussion_path)
+                                format!("Unable to write to file for {:?}", discussions_json_path)
                             })?;
                     }
                 }
