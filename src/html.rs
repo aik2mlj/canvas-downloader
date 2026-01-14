@@ -25,9 +25,7 @@ pub async fn process_html_links(
         .find(Name("a"))
         .filter_map(|n| n.attr("href"))
         .filter(|x| x.starts_with(&options.canvas_url))
-        .map(|x| Url::parse(x))
-        .filter(|x| x.is_ok())
-        .map(|x| x.unwrap())
+        .filter_map(|x| Url::parse(x).ok())
         .filter(|x| re.is_match(x.path()))
         .filter_map(|x| {
             // Extract file ID and use the correct Canvas API endpoint

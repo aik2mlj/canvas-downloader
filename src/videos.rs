@@ -279,7 +279,11 @@ async fn process_session(
     match m3u8_parser {
         Ok(Playlist::MasterPlaylist(pl)) => {
             // get the highest bandwidth
-            let download_variant = pl.variants.iter().max_by_key(|v| v.bandwidth).unwrap();
+            let download_variant = pl
+                .variants
+                .iter()
+                .max_by_key(|v| v.bandwidth)
+                .expect("No variants found");
 
             let panopto_index_m3u8 = format!(
                 "https://{}/sessions/{}/{}-{}.hls/{}",
