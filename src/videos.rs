@@ -5,8 +5,8 @@ use std::sync::Arc;
 
 use anyhow::{Result, anyhow};
 use chrono::{TimeZone, Utc};
+use lazy_regex::regex;
 use m3u8_rs::Playlist;
-use regex::Regex;
 use reqwest::{Url, header};
 use select::document::Document;
 use select::predicate::Name;
@@ -322,8 +322,7 @@ async fn process_session(
                         format!("{}.{}", result.SessionName, file_uri_ext)
                     };
 
-                    let date_regex = Regex::new(r"/Date\((\d+)\)/").unwrap();
-                    let date_match_rfc3339 = date_regex
+                    let date_match_rfc3339 = regex!(r"/Date\((\d+)\)/")
                         .captures(&result.StartTime)
                         .and_then(|x| x.get(1))
                         .map(|x| x.as_str())

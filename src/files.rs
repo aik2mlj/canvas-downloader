@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use anyhow::{Context, Error, Result};
 use chrono::{DateTime, Local};
-use regex::Regex;
+use lazy_regex::regex;
 use reqwest::header;
 
 use crate::api::get_canvas_api;
@@ -303,15 +303,12 @@ pub async fn prepare_link_for_download(
     let filename = headers
         .get(header::CONTENT_DISPOSITION)
         .and_then(|x| x.to_str().ok())
-        .and_then(|x| {
-            let re = Regex::new(r#"filename="(.*)""#).unwrap();
-            re.captures(x)
-        })
+        .and_then(|x| regex!(r#"filename="(.*)""#).captures(x))
         .and_then(|x| x.get(1))
         .map(|x| x.as_str())
         .unwrap_or_else(|| {
-            let re = Regex::new(r"/([^/]+)$").unwrap();
-            re.captures(&link)
+            regex!(r"/([^/]+)$")
+                .captures(&link)
                 .and_then(|x| x.get(1))
                 .map(|x| x.as_str())
                 .unwrap_or("unknown")

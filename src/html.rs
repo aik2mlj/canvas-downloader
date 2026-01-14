@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use futures::future::join_all;
-use regex::Regex;
+use lazy_regex::regex;
 use reqwest::Url;
 use select::document::Document;
 use select::predicate::Name;
@@ -20,7 +20,7 @@ pub async fn process_html_links(
 ) -> Result<()> {
     let destination_path = path.join(sanitize_filename::sanitize(&folder_name));
     // If file link is part of course files
-    let re = Regex::new(r"/courses/[0-9]+/files/([0-9]+)").unwrap();
+    let re = regex!(r"/courses/[0-9]+/files/([0-9]+)");
     let file_links = Document::from(html.as_str())
         .find(Name("a"))
         .filter_map(|n| n.attr("href"))
