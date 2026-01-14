@@ -133,12 +133,9 @@ async fn process_video_folder(
         .await?;
     // write into folder.json
     let folderinfo = folderinfo_result.text().await?;
-    if let Some(folder_json_path) = get_raw_json_path(
-        &path,
-        "folder.json",
-        &options.base_path,
-        options.save_json,
-    )? {
+    if let Some(folder_json_path) =
+        get_raw_json_path(&path, "folder.json", &options.base_path, options.save_json)?
+    {
         let mut file = std::fs::File::create(folder_json_path)?;
         let pretty_json = prettify_json(&folderinfo).unwrap_or(folderinfo.clone());
         file.write_all(pretty_json.as_bytes())?;

@@ -43,8 +43,11 @@ pub async fn process_modules(
                         options.save_json,
                     )? {
                         let mut module_file = std::fs::File::create(module_json.clone())
-                            .with_context(|| format!("Unable to create file for {:?}", module_json))?;
-                        let pretty_json = prettify_json(&module_body).unwrap_or(module_body.clone());
+                            .with_context(|| {
+                                format!("Unable to create file for {:?}", module_json)
+                            })?;
+                        let pretty_json =
+                            prettify_json(&module_body).unwrap_or(module_body.clone());
                         module_file
                             .write_all(pretty_json.as_bytes())
                             .with_context(|| {
