@@ -314,7 +314,9 @@ async fn process_discussion_view(
                 .with_context(|| format!("Could not write to file {:?}", html_path))?;
         }
         Result::Err(e) => {
-            tracing::error!("Error when getting submissions at link:{url}, path:{path:?}\n{e:?}",);
+            tracing::error!(
+                "Error when getting discussion views at link:{url}, path:{path:?}\n{e:?}",
+            );
         }
     }
 

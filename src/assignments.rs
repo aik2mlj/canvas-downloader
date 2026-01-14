@@ -192,7 +192,7 @@ async fn process_submissions(
 ) -> Result<()> {
     let submissions_url = format!("{}{}", url, options.user.id);
 
-    let resp = get_canvas_api(submissions_url, &options).await?;
+    let resp = get_canvas_api(submissions_url.clone(), &options).await?;
     let submissions_body = resp.text().await?;
 
     let assignment_name = sanitize_filename::sanitize(&assignment.name);
@@ -219,7 +219,9 @@ async fn process_submissions(
             lock.append(&mut filtered_files);
         }
         Result::Err(e) => {
-            tracing::error!("Error when getting submissions at link:{url}, path:{path:?}\n{e:?}",);
+            tracing::error!(
+                "Error when getting submissions at link:{submissions_url}, path:{path:?}\n{e:?}",
+            );
         }
     }
 
