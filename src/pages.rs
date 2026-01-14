@@ -26,7 +26,7 @@ pub async fn process_pages(
         let page_result = serde_json::from_str::<PageResult>(&page_body);
 
         match page_result {
-            Ok(PageResult::Ok(pages)) | Ok(PageResult::Direct(pages)) => {
+            Ok(PageResult::Ok(pages)) => {
                 if !pages.is_empty() && !has_pages {
                     // Create pages folder only when we have actual pages
                     let pages_path = path.join("pages");
@@ -71,10 +71,6 @@ pub async fn process_pages(
 
             Ok(PageResult::Err { status }) => {
                 tracing::debug!("No pages found for url {} (status: {})", uri, status);
-            }
-
-            Ok(PageResult::Empty(_)) => {
-                tracing::debug!("No pages found for url {} (empty response)", uri);
             }
 
             Err(e) => {

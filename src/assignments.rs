@@ -30,7 +30,7 @@ pub async fn process_assignments(
         let assignment_result = serde_json::from_str::<AssignmentResult>(&page_body);
 
         match assignment_result {
-            Ok(AssignmentResult::Ok(assignments)) | Ok(AssignmentResult::Direct(assignments)) => {
+            Ok(AssignmentResult::Ok(assignments)) => {
                 if !assignments.is_empty() && !has_assignments {
                     // Create assignments folder only when we have actual assignments
                     let folder_path = path.join("assignments");
@@ -88,9 +88,6 @@ pub async fn process_assignments(
                 tracing::error!(
                     "Failed to access assignments at link:{uri}, path:{path:?}, status:{status}",
                 );
-            }
-            Ok(AssignmentResult::Empty(_)) => {
-                tracing::error!("No assignments found for url {} (empty response)", uri);
             }
             Err(e) => {
                 tracing::error!(

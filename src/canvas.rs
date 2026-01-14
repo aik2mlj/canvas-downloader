@@ -53,10 +53,6 @@ pub(crate) enum FileResult {
 pub(crate) enum PageResult {
     Err { status: String },
     Ok(Vec<Page>),
-    // Handle direct array response without wrapper
-    Direct(Vec<Page>),
-    // Handle empty response or null
-    Empty(Option<serde_json::Value>),
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -83,10 +79,6 @@ pub struct PageBody {
 pub(crate) enum AssignmentResult {
     Err { status: String },
     Ok(Vec<Assignment>),
-    // Handle direct array response without wrapper
-    Direct(Vec<Assignment>),
-    // Handle empty response or any other format
-    Empty(Option<serde_json::Value>),
 }
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Assignment {
@@ -210,10 +202,6 @@ pub struct PanoptoDeliveryInfo {
 pub(crate) enum ModuleResult {
     Err { status: String },
     Ok(Vec<Module>),
-    // Handle direct array response without wrapper
-    Direct(Vec<Module>),
-    // Handle empty response or null
-    Empty(Option<serde_json::Value>),
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -236,10 +224,6 @@ pub struct Module {
 pub(crate) enum ModuleItemResult {
     Err { status: String },
     Ok(Vec<ModuleItem>),
-    // Handle direct array response without wrapper
-    Direct(Vec<ModuleItem>),
-    // Handle empty response or null
-    Empty(Option<serde_json::Value>),
 }
 
 #[derive(Clone, Debug, Deserialize)]

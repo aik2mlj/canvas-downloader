@@ -25,7 +25,7 @@ pub async fn process_modules(
         let module_result = serde_json::from_str::<ModuleResult>(&module_body);
 
         match module_result {
-            Ok(ModuleResult::Ok(modules)) | Ok(ModuleResult::Direct(modules)) => {
+            Ok(ModuleResult::Ok(modules)) => {
                 if !modules.is_empty() && !has_modules {
                     // Create modules folder only when we have actual modules
                     let modules_path = path.join("modules");
@@ -78,10 +78,6 @@ pub async fn process_modules(
                 tracing::error!("No modules found for url {} status: {}", url, status);
             }
 
-            Ok(ModuleResult::Empty(_)) => {
-                tracing::error!("No modules found for url {} (empty response)", url);
-            }
-
             Err(e) => {
                 tracing::error!("No modules found for url {} error: {}", url, e);
             }
@@ -118,7 +114,7 @@ async fn process_module_items(
         let items_result = serde_json::from_str::<ModuleItemResult>(&items_body);
 
         match items_result {
-            Ok(ModuleItemResult::Ok(items)) | Ok(ModuleItemResult::Direct(items)) => {
+            Ok(ModuleItemResult::Ok(items)) => {
                 let mut files_to_process = Vec::new();
 
                 for item in items {
@@ -230,10 +226,6 @@ async fn process_module_items(
                 tracing::error!(
                     "Failed to access module items at link:{url}, path:{path:?}, status:{status}"
                 );
-            }
-
-            Ok(ModuleItemResult::Empty(_)) => {
-                tracing::error!("No module items found for url {} (empty response)", url);
             }
 
             Err(e) => {
