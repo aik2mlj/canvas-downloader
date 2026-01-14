@@ -119,6 +119,8 @@ async fn process_module_items(
 
         match items_result {
             Ok(ModuleItemResult::Ok(items)) | Ok(ModuleItemResult::Direct(items)) => {
+                let mut files_to_process = Vec::new();
+
                 for item in items {
                     match item.item_type.as_str() {
                         "File" => {
@@ -133,13 +135,7 @@ async fn process_module_items(
                                     .await
                                 {
                                     Ok(file) => {
-                                        // Use filter_files to apply standard filtering logic
-                                        let filtered = filter_files(&options, &path, vec![file]); // TODO: optmize
-
-                                        if !filtered.is_empty() {
-                                            let mut lock = options.files_to_download.lock().await;
-                                            lock.push(filtered.into_iter().next().unwrap());
-                                        }
+                                        files_to_process.push(file);
                                     }
                                     Err(e) => {
                                         tracing::error!(
@@ -217,6 +213,15 @@ async fn process_module_items(
                                 item.title
                             );
                         }
+                    }
+                }
+
+                // Filter and add all collected files to download queue in one batch
+                if !files_to_process.is_empty() {
+                    let filtered_files = filter_files(&options, &path, files_to_process);
+                    if !filtered_files.is_empty() {
+                        let mut lock = options.files_to_download.lock().await;
+                        lock.extend(filtered_files);
                     }
                 }
             }
