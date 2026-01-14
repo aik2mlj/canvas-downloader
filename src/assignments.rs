@@ -39,7 +39,7 @@ pub async fn process_assignments(
 
                     // Create assignments.json file
                     if let Some(assignments_json_path) = get_raw_json_path(
-                        &folder_path,
+                        &path,
                         "assignments.json",
                         &options.base_path,
                         options.save_json,

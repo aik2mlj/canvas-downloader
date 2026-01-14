@@ -53,7 +53,7 @@ pub async fn process_discussions(
 
                     // Create discussions.json file
                     if let Some(discussions_json_path) = get_raw_json_path(
-                        &folder_path,
+                        &path,
                         &format!("{folder_name}.json"),
                         &options.base_path,
                         options.save_json,

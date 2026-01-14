@@ -38,7 +38,7 @@ pub async fn process_pages(
 
                     // Create pages.json file
                     if let Some(pages_json_path) = get_raw_json_path(
-                        &pages_path,
+                        &path,
                         "pages.json",
                         &options.base_path,
                         options.save_json,

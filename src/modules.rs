@@ -37,7 +37,7 @@ pub async fn process_modules(
 
                     // Create modules.json file
                     if let Some(module_json) = get_raw_json_path(
-                        &modules_path,
+                        &path,
                         "modules.json",
                         &options.base_path,
                         options.save_json,
