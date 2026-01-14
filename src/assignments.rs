@@ -71,16 +71,14 @@ pub async fn process_assignments(
                             (String, PathBuf, Assignment),
                             options.clone()
                         );
-                        fork!(
-                            process_html_links,
-                            (
-                                assignment.description.clone(),
-                                folder_path.clone(),
-                                assignment.name.clone()
-                            ),
-                            (String, PathBuf, String),
-                            options.clone()
-                        );
+                        if let Some(desc) = assignment.description {
+                            fork!(
+                                process_html_links,
+                                (desc, folder_path.clone(), assignment.name.clone()),
+                                (String, PathBuf, String),
+                                options.clone()
+                            );
+                        }
                     }
                 }
             }
@@ -170,7 +168,11 @@ fn generate_assignment_html(assignment: &Assignment) -> String {
 
     // Description
     html.push_str("        <div class=\"assignment-description\">\n");
-    html.push_str(&format!("            {}\n", &assignment.description));
+    // assignment.description is an Option<String>
+    html.push_str(&format!(
+        "            {}\n",
+        assignment.description.as_deref().unwrap_or("")
+    ));
     html.push_str("        </div>\n");
     html.push_str("    </div>\n");
 

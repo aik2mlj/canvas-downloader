@@ -84,7 +84,7 @@ pub(crate) enum AssignmentResult {
 pub struct Assignment {
     pub id: u32,
     pub name: String,
-    pub description: String,
+    pub description: Option<String>,
     pub created_at: Option<String>,
     pub due_at: Option<String>,
     pub submission_types: Option<Vec<String>>,
