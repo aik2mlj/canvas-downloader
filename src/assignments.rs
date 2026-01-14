@@ -8,7 +8,7 @@ use crate::api::{get_canvas_api, get_pages};
 use crate::canvas::{Assignment, AssignmentResult, ProcessOptions, Submission};
 use crate::files::filter_files;
 use crate::html::process_html_links;
-use crate::utils::{get_raw_json_path, prettify_json};
+use crate::utils::{create_folder_if_not_exist_or_ignored, get_raw_json_path, prettify_json};
 
 pub async fn process_assignments(
     (url, path): (String, PathBuf),
@@ -17,51 +17,68 @@ pub async fn process_assignments(
     let assignments_url = format!("{}assignments?include[]=submission&include[]=assignment_visibility&include[]=all_dates&include[]=overrides&include[]=observed_users&include[]=can_edit&include[]=score_statistics", url);
     let pages = get_pages(assignments_url, &options).await?;
 
-    let assignments_json = get_raw_json_path(
-        &path,
-        "assignments.json",
-        &options.base_path,
-        options.save_json,
-    )?;
-    let mut assignments_file = assignments_json
-        .as_ref()
-        .map(|p| std::fs::File::create(p.clone()).ok())
-        .flatten();
+    let mut has_assignments = false;
+    let mut assignments_folder_path = None;
 
     for pg in pages {
         let uri = pg.url().to_string();
         let page_body = pg.text().await?;
 
-        if let Some(ref mut file) = assignments_file {
-            let pretty_json = prettify_json(&page_body).unwrap_or(page_body.clone());
-            file.write_all(pretty_json.as_bytes())
-                .with_context(|| format!("Unable to write to file for {:?}", assignments_json))?;
-        }
-
         let assignment_result = serde_json::from_str::<AssignmentResult>(&page_body);
 
         match assignment_result {
             Ok(AssignmentResult::Ok(assignments)) | Ok(AssignmentResult::Direct(assignments)) => {
+                if !assignments.is_empty() && !has_assignments {
+                    // Create assignments folder only when we have actual assignments
+                    let folder_path = path.join("assignments");
+                    if !create_folder_if_not_exist_or_ignored(&folder_path, options.clone())? {
+                        continue;
+                    }
+                    assignments_folder_path = Some(folder_path.clone());
+                    has_assignments = true;
+
+                    // Create assignments.json file
+                    if let Some(assignments_json_path) = get_raw_json_path(
+                        &folder_path,
+                        "assignments.json",
+                        &options.base_path,
+                        options.save_json,
+                    )? {
+                        let mut assignments_json_file =
+                            std::fs::File::create(assignments_json_path.clone()).with_context(
+                                || format!("Unable to create file for {:?}", assignments_json_path),
+                            )?;
+                        let pretty_json = prettify_json(&page_body).unwrap_or(page_body.clone());
+                        assignments_json_file
+                            .write_all(pretty_json.as_bytes())
+                            .with_context(|| {
+                                format!("Unable to write to file for {:?}", assignments_json_path)
+                            })?;
+                    }
+                }
+
                 for assignment in assignments {
-                    // let assignment_path = path.join(sanitize_filename::sanitize(&assignment.name));
-                    let submissions_url =
-                        format!("{}assignments/{}/submissions/", url, assignment.id);
-                    fork!(
-                        process_submissions,
-                        (submissions_url, path.clone(), assignment.clone()),
-                        (String, PathBuf, Assignment),
-                        options.clone()
-                    );
-                    fork!(
-                        process_html_links,
-                        (
-                            assignment.description.clone(),
-                            path.clone(),
-                            assignment.name.clone()
-                        ),
-                        (String, PathBuf, String),
-                        options.clone()
-                    );
+                    if let Some(ref folder_path) = assignments_folder_path {
+                        // let assignment_path = path.join(sanitize_filename::sanitize(&assignment.name));
+                        let submissions_url =
+                            format!("{}assignments/{}/submissions/", url, assignment.id);
+                        fork!(
+                            process_submissions,
+                            (submissions_url, folder_path.clone(), assignment.clone()),
+                            (String, PathBuf, Assignment),
+                            options.clone()
+                        );
+                        fork!(
+                            process_html_links,
+                            (
+                                assignment.description.clone(),
+                                folder_path.clone(),
+                                assignment.name.clone()
+                            ),
+                            (String, PathBuf, String),
+                            options.clone()
+                        );
+                    }
                 }
             }
             Ok(AssignmentResult::Err { status }) => {

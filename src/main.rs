@@ -361,7 +361,7 @@ async fn main() -> Result<()> {
             cred.canvas_url, course.id
         );
 
-        let folder_path = course_folder_path.join("files");
+        let folder_path = course_folder_path.join("files"); // TODO: if no files, skip creating folder
         if create_folder_if_not_exist_or_ignored(&folder_path, options.clone())? {
             fork!(
                 process_folders,
@@ -552,15 +552,12 @@ async fn process_data(
     (url, course_id, path): (String, u32, PathBuf),
     options: Arc<ProcessOptions>,
 ) -> Result<()> {
-    let assignments_path = path.join("assignments");
-    if create_folder_if_not_exist_or_ignored(&assignments_path, options.clone())? {
-        fork!(
-            process_assignments,
-            (url.clone(), assignments_path),
-            (String, PathBuf),
-            options.clone()
-        );
-    }
+    fork!(
+        process_assignments,
+        (url.clone(), path.clone()),
+        (String, PathBuf),
+        options.clone()
+    );
     fork!(
         process_users,
         (url.clone(), path.clone()),
