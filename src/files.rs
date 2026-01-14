@@ -326,7 +326,7 @@ pub async fn prepare_link_for_download(
     let sanitized_filename = sanitize_filename::sanitize(filename);
     let file = File {
         id: 0,
-        folder_id: 0,
+        folder_id: None,
         display_name: filename.to_string(),
         size: 0,
         url: link.clone(),

@@ -148,7 +148,7 @@ pub struct Comments {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct File {
     pub id: u32,
-    pub folder_id: u32,
+    pub folder_id: Option<u32>,
     pub display_name: String,
     pub size: u64,
     pub url: String,

@@ -344,7 +344,7 @@ async fn process_session(
 
                     let file = File {
                         display_name: download_file_name,
-                        folder_id: 0,
+                        folder_id: None,
                         id: 0,
                         size: 0,
                         url: panopto_mp4_file,
