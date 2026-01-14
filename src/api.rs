@@ -1,7 +1,7 @@
 use crate::canvas::ProcessOptions;
 use anyhow::{Error, Result};
 use rand::Rng;
-use reqwest::{header, Response, Url};
+use reqwest::{Response, Url, header};
 use std::time::Duration;
 
 pub async fn get_pages(link: String, options: &ProcessOptions) -> Result<Vec<Response>> {
@@ -66,9 +66,13 @@ pub async fn get_canvas_api(url: String, options: &ProcessOptions) -> Result<Res
                     if retry == 2 {
                         // Log more specific error information on final retry
                         if url.contains("users") {
-                            tracing::debug!("Access denied to user data for course - API token may need elevated permissions");
+                            tracing::debug!(
+                                "Access denied to user data for course - API token may need elevated permissions"
+                            );
                         } else if url.contains("discussion_topics") {
-                            tracing::debug!("Access denied to discussions - course may have restricted discussion access");
+                            tracing::debug!(
+                                "Access denied to discussions - course may have restricted discussion access"
+                            );
                         } else {
                             tracing::debug!(
                                 "Access denied to {} - check API token permissions",

@@ -3,11 +3,11 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use chrono::{TimeZone, Utc};
 use m3u8_rs::Playlist;
 use regex::Regex;
-use reqwest::{header, Url};
+use reqwest::{Url, header};
 use select::document::Document;
 use select::predicate::Name;
 use serde_json::json;

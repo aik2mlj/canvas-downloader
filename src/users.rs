@@ -16,7 +16,10 @@ pub async fn process_users(
         return Ok(());
     }
 
-    let users_url = format!("{}users?include_inactive=true&include[]=avatar_url&include[]=enrollments&include[]=email&include[]=observed_users&include[]=can_be_removed&include[]=custom_links", url);
+    let users_url = format!(
+        "{}users?include_inactive=true&include[]=avatar_url&include[]=enrollments&include[]=email&include[]=observed_users&include[]=can_be_removed&include[]=custom_links",
+        url
+    );
     let pages = get_pages(users_url, &options).await?;
 
     if let Some(users_path) = get_raw_json_path(

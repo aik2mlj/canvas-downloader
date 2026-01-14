@@ -14,7 +14,10 @@ pub async fn process_assignments(
     (url, path): (String, PathBuf),
     options: Arc<ProcessOptions>,
 ) -> Result<()> {
-    let assignments_url = format!("{}assignments?include[]=submission&include[]=assignment_visibility&include[]=all_dates&include[]=overrides&include[]=observed_users&include[]=can_edit&include[]=score_statistics", url);
+    let assignments_url = format!(
+        "{}assignments?include[]=submission&include[]=assignment_visibility&include[]=all_dates&include[]=overrides&include[]=observed_users&include[]=can_edit&include[]=score_statistics",
+        url
+    );
     let pages = get_pages(assignments_url, &options).await?;
 
     let mut has_assignments = false;
