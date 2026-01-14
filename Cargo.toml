@@ -33,3 +33,7 @@ tracing-subscriber = { version = ">=0.3", features = ["env-filter"] }
 
 [profile.release]
 strip = true
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+opt-level = "z"
