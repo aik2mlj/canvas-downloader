@@ -198,6 +198,7 @@ async fn process_submissions(
     let submissions_body = resp.text().await?;
 
     let assignment_name = sanitize_filename::sanitize(&assignment.name);
+    let assignment_folder_path = path.join(assignment_name.clone());
     if let Some(submissions_json) = get_raw_json_path(
         &path,
         &format!("{assignment_name}.json"),
@@ -216,9 +217,16 @@ async fn process_submissions(
     let submissions_result = serde_json::from_str::<Submission>(&submissions_body);
     match submissions_result {
         Result::Ok(submissions) => {
-            let mut filtered_files = filter_files(&options, &path, submissions.attachments);
-            let mut lock = options.files_to_download.lock().await;
-            lock.append(&mut filtered_files);
+            let mut filtered_files =
+                filter_files(&options, &assignment_folder_path, submissions.attachments);
+
+            if !filtered_files.is_empty() {
+                // create folder for assignment if there are files to download
+                create_folder_if_not_exist_or_ignored(&assignment_folder_path, options.clone())?;
+
+                let mut lock = options.files_to_download.lock().await;
+                lock.append(&mut filtered_files);
+            }
         }
         Result::Err(e) => {
             tracing::error!(
