@@ -153,7 +153,6 @@ When creating commit messages:
 - **Do not include Claude co-authorship** (no "Co-Authored-By: Claude" lines)
 - **Base commit messages on actual file changes** from `git diff` and `git status`, not on Claude's memory of what was changed
 - The user may have made additional modifications after Claude's changes, so always check the actual diff before writing the commit message
-- The commit message should be concise and precise.
 
 ## Known Issues
 
