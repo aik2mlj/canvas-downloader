@@ -231,25 +231,15 @@ async fn main() -> Result<()> {
         None
     };
 
-    // create raw json folder
+    // if ignored by ignore file, disable saving raw json
     let raw_folder_path = args.destination_folder.join("raw");
-    if args.no_raw
-        || ignored(
-            &raw_folder_path,
-            true,
-            &args.destination_folder,
-            ignore_matcher.as_deref(),
-        )
-    {
-        // if ignored by ignore file, disable saving json
+    if ignored(
+        &raw_folder_path,
+        true,
+        &args.destination_folder,
+        ignore_matcher.as_deref(),
+    ) {
         args.no_raw = true;
-    } else if !raw_folder_path.exists() {
-        std::fs::create_dir(&raw_folder_path).with_context(|| {
-            format!(
-                "Failed to create raw JSON directory: {}",
-                raw_folder_path.to_string_lossy()
-            )
-        })?;
     }
 
     let options = Arc::new(ProcessOptions {
@@ -345,6 +335,17 @@ async fn main() -> Result<()> {
     }
 
     println!("Courses found:");
+
+    // create raw folder if needed
+    if !args.no_raw && !raw_folder_path.exists() {
+        std::fs::create_dir(&raw_folder_path).with_context(|| {
+            format!(
+                "Failed to create raw JSON directory: {}",
+                raw_folder_path.to_string_lossy()
+            )
+        })?;
+    }
+
     for course in courses_to_download {
         println!("  * {} - {}", course.course_code, course.name);
 
