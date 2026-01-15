@@ -34,7 +34,7 @@ pub async fn process_assignments(
                 if !assignments.is_empty() && !has_assignments {
                     // Create assignments folder only when we have actual assignments
                     let folder_path = path.join("assignments");
-                    if !create_folder_if_not_exist_or_ignored(&folder_path, options.clone())? {
+                    if !create_folder_if_not_exist_or_ignored(&folder_path, &options)? {
                         continue;
                     }
                     assignments_folder_path = Some(folder_path.clone());
@@ -222,7 +222,7 @@ async fn process_submissions(
 
             if !filtered_files.is_empty() {
                 // create folder for assignment if there are files to download
-                create_folder_if_not_exist_or_ignored(&assignment_folder_path, options.clone())?;
+                create_folder_if_not_exist_or_ignored(&assignment_folder_path, &options)?;
 
                 let mut lock = options.files_to_download.lock().await;
                 lock.append(&mut filtered_files);

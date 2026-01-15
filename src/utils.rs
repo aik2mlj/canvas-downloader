@@ -3,7 +3,6 @@ use anyhow::{Context, Result};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 pub fn print_all_courses_by_term(courses: &[Course]) {
     let mut grouped_courses: HashMap<u32, Vec<(&str, &str)>> = HashMap::new();
@@ -88,22 +87,20 @@ pub fn ignored(
     ignored
 }
 
-fn create_folder_if_not_exist(folder_path: &Path) -> Result<bool> {
-    if !folder_path.exists() {
-        std::fs::create_dir_all(folder_path).with_context(|| {
-            format!(
-                "Failed to create directory: {}",
-                folder_path.to_string_lossy()
-            )
-        })?;
-    }
-    Ok(true)
+fn create_folder_if_not_exist(folder_path: &Path) -> Result<()> {
+    std::fs::create_dir_all(folder_path).with_context(|| {
+        format!(
+            "Failed to create directory: {}",
+            folder_path.to_string_lossy()
+        )
+    })?;
+    Ok(())
 }
 
 // return Ok(true) if folder created or already exists, Ok(false) if ignored
 pub fn create_folder_if_not_exist_or_ignored(
     folder_path: &Path,
-    options: Arc<ProcessOptions>,
+    options: &ProcessOptions,
 ) -> Result<bool> {
     if ignored(
         folder_path,
@@ -114,7 +111,8 @@ pub fn create_folder_if_not_exist_or_ignored(
         return Ok(false);
     }
 
-    create_folder_if_not_exist(folder_path)
+    create_folder_if_not_exist(folder_path)?;
+    Ok(true)
 }
 
 pub fn prettify_json(json_str: &str) -> Result<String> {

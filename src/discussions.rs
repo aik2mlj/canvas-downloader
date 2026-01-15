@@ -45,7 +45,7 @@ pub async fn process_discussions(
                         "discussions"
                     };
                     let folder_path = path.join(folder_name);
-                    if !create_folder_if_not_exist_or_ignored(&folder_path, options.clone())? {
+                    if !create_folder_if_not_exist_or_ignored(&folder_path, &options)? {
                         continue;
                     }
                     discussions_folder_path = Some(folder_path.clone());
@@ -92,7 +92,7 @@ pub async fn process_discussions(
                             // create folder for discussion if there are files to download
                             create_folder_if_not_exist_or_ignored(
                                 &discussion_folder_path,
-                                options.clone(),
+                                &options,
                             )?;
                             // add files to download list
                             let mut lock = options.files_to_download.lock().await;
@@ -331,7 +331,7 @@ async fn process_discussion_view(
     let mut filtered_files = filter_files(&options, &discussion_folder_path, files);
     if !filtered_files.is_empty() {
         // create folder for discussion if there are files to download
-        create_folder_if_not_exist_or_ignored(&discussion_folder_path, options.clone())?;
+        create_folder_if_not_exist_or_ignored(&discussion_folder_path, &options)?;
 
         let mut lock = options.files_to_download.lock().await;
         lock.append(&mut filtered_files);

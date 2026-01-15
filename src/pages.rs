@@ -30,7 +30,7 @@ pub async fn process_pages(
                 if !pages.is_empty() && !has_pages {
                     // Create pages folder only when we have actual pages
                     let pages_path = path.join("pages");
-                    if !create_folder_if_not_exist_or_ignored(&pages_path, options.clone())? {
+                    if !create_folder_if_not_exist_or_ignored(&pages_path, &options)? {
                         continue;
                     }
                     pages_folder_path = Some(pages_path.clone());

@@ -353,7 +353,7 @@ async fn main() -> Result<()> {
         let course_folder_path = args
             .destination_folder
             .join(course.course_code.replace('/', "_"));
-        if !create_folder_if_not_exist_or_ignored(&course_folder_path, options.clone())? {
+        if !create_folder_if_not_exist_or_ignored(&course_folder_path, &options)? {
             continue;
         }
         // Prep URL for course's root folder
@@ -363,7 +363,7 @@ async fn main() -> Result<()> {
         );
 
         let folder_path = course_folder_path.join("files"); // TODO: if no files, skip creating folder
-        if create_folder_if_not_exist_or_ignored(&folder_path, options.clone())? {
+        if create_folder_if_not_exist_or_ignored(&folder_path, &options)? {
             fork!(
                 process_folders,
                 (course_folders_link, folder_path),

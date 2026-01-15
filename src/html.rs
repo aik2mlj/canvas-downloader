@@ -71,7 +71,7 @@ pub async fn process_html_links(
 
     if !filtered_files.is_empty() {
         // create folder if there are files to download
-        create_folder_if_not_exist_or_ignored(&destination_path, options.clone())?;
+        create_folder_if_not_exist_or_ignored(&destination_path, &options)?;
 
         let mut lock = options.files_to_download.lock().await;
         lock.append(&mut filtered_files);

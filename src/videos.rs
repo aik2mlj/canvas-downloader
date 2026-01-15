@@ -100,7 +100,7 @@ pub async fn process_videos(
         .to_string();
 
     let video_folder_path = path.join("videos");
-    if !create_folder_if_not_exist_or_ignored(&video_folder_path, options.clone())? {
+    if !create_folder_if_not_exist_or_ignored(&video_folder_path, &options)? {
         return Ok(());
     }
     process_video_folder(
@@ -201,7 +201,7 @@ async fn process_video_folder(
         if i == 0 {
             for subfolder in sessions.Subfolders {
                 let subfolder_path = path.join(subfolder.Name);
-                if !create_folder_if_not_exist_or_ignored(&subfolder_path, options.clone())? {
+                if !create_folder_if_not_exist_or_ignored(&subfolder_path, &options)? {
                     continue;
                 }
                 fork!(

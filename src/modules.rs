@@ -29,7 +29,7 @@ pub async fn process_modules(
                 if !modules.is_empty() && !has_modules {
                     // Create modules folder only when we have actual modules
                     let modules_path = path.join("modules");
-                    if !create_folder_if_not_exist_or_ignored(&modules_path, options.clone())? {
+                    if !create_folder_if_not_exist_or_ignored(&modules_path, &options)? {
                         continue;
                     }
                     modules_folder_path = Some(modules_path.clone());
@@ -60,7 +60,7 @@ pub async fn process_modules(
                     if let Some(ref modules_path) = modules_folder_path {
                         let module_path =
                             modules_path.join(sanitize_filename::sanitize(&module.name));
-                        if !create_folder_if_not_exist_or_ignored(&module_path, options.clone())? {
+                        if !create_folder_if_not_exist_or_ignored(&module_path, &options)? {
                             continue;
                         }
 
@@ -146,10 +146,7 @@ async fn process_module_items(
                         "Page" => {
                             if let Some(full_page_url) = item.url {
                                 let item_path = path.join(sanitize_filename::sanitize(&item.title));
-                                if !create_folder_if_not_exist_or_ignored(
-                                    &item_path,
-                                    options.clone(),
-                                )? {
+                                if !create_folder_if_not_exist_or_ignored(&item_path, &options)? {
                                     continue;
                                 }
 
@@ -195,10 +192,7 @@ async fn process_module_items(
                             // SubHeaders are just organizational - create a folder
                             let subheader_path =
                                 path.join(sanitize_filename::sanitize(&item.title));
-                            if !create_folder_if_not_exist_or_ignored(
-                                &subheader_path,
-                                options.clone(),
-                            )? {
+                            if !create_folder_if_not_exist_or_ignored(&subheader_path, &options)? {
                                 continue;
                             }
                         }
