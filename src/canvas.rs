@@ -20,7 +20,7 @@ pub struct Course {
 #[derive(Clone, Debug, Deserialize)]
 pub struct User {
     pub id: u32,
-    pub name: String,
+    // pub name: String,
 }
 
 #[derive(Deserialize)]
@@ -32,12 +32,12 @@ pub(crate) enum FolderResult {
 
 #[derive(Deserialize)]
 pub struct Folder {
-    pub id: u32,
+    // pub id: u32,
     pub name: String,
     pub folders_url: String,
     pub files_url: String,
-    pub for_submissions: bool,
-    pub can_upload: bool,
+    // pub for_submissions: bool,
+    // pub can_upload: bool,
     pub parent_folder_id: Option<u32>,
 }
 
@@ -57,21 +57,21 @@ pub(crate) enum PageResult {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Page {
-    pub page_id: u32,
+    // pub page_id: u32,
     pub url: String,
     pub title: String,
-    pub updated_at: String,
-    pub locked_for_user: bool,
+    // pub updated_at: String,
+    // pub locked_for_user: bool,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct PageBody {
-    pub page_id: u32,
-    pub url: String,
+    // pub page_id: u32,
+    // pub url: String,
     pub title: String,
     pub body: Option<String>,
-    pub updated_at: String,
-    pub locked_for_user: bool,
+    // pub updated_at: String,
+    // pub locked_for_user: bool,
 }
 
 #[derive(Deserialize)]
@@ -92,8 +92,8 @@ pub struct Assignment {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Submission {
-    pub id: Option<u32>,
-    pub body: Option<String>,
+    // pub id: Option<u32>,
+    // pub body: Option<String>,
     #[serde(default)]
     pub attachments: Vec<File>,
 }
@@ -123,7 +123,7 @@ pub struct DiscussionAuthor {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct DiscussionView {
-    pub unread_entries: Vec<u32>,
+    // pub unread_entries: Vec<u32>,
     pub participants: Vec<Participant>,
     pub view: Vec<Comments>,
 }
@@ -136,7 +136,7 @@ pub struct Participant {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Comments {
-    pub id: u32,
+    // pub id: u32,
     pub user_id: Option<u32>,
     pub user_name: Option<String>,
     pub message: Option<String>,
@@ -161,13 +161,13 @@ pub struct File {
 #[derive(Clone, Debug, Deserialize)]
 pub struct Session {
     pub session_url: String,
-    pub requires_terms_acceptance: bool,
+    // pub requires_terms_acceptance: bool,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 #[allow(non_snake_case)]
 pub struct PanoptoSessionInfo {
-    pub TotalNumber: u32,
+    // pub TotalNumber: u32,
     pub Results: Vec<PanoptoResult>,
     pub Subfolders: Vec<PanoptoSubfolder>,
 }
@@ -176,7 +176,7 @@ pub struct PanoptoSessionInfo {
 #[allow(non_snake_case)]
 pub struct PanoptoResult {
     pub DeliveryID: String,
-    pub FolderID: String,
+    // pub FolderID: String,
     pub SessionID: String,
     pub SessionName: String,
     pub StartTime: String,
@@ -193,7 +193,7 @@ pub struct PanoptoSubfolder {
 #[derive(Clone, Debug, Deserialize)]
 #[allow(non_snake_case)]
 pub struct PanoptoDeliveryInfo {
-    pub SessionId: String,
+    // pub SessionId: String,
     pub ViewerFileId: String,
 }
 
@@ -206,16 +206,16 @@ pub(crate) enum ModuleResult {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Module {
-    pub id: u32,
+    // pub id: u32,
     pub name: String,
-    pub position: u32,
-    pub unlock_at: Option<String>,
-    pub require_sequential_progress: Option<bool>,
-    pub publish_final_grade: Option<bool>,
-    pub prerequisite_module_ids: Vec<u32>,
-    pub state: Option<String>,
-    pub completed_at: Option<String>,
-    pub items_count: u32,
+    // pub position: u32,
+    // pub unlock_at: Option<String>,
+    // pub require_sequential_progress: Option<bool>,
+    // pub publish_final_grade: Option<bool>,
+    // pub prerequisite_module_ids: Vec<u32>,
+    // pub state: Option<String>,
+    // pub completed_at: Option<String>,
+    // pub items_count: u32,
     pub items_url: String,
 }
 
@@ -228,23 +228,23 @@ pub(crate) enum ModuleItemResult {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct ModuleItem {
-    pub id: u32,
+    // pub id: u32,
     pub title: String,
     #[serde(rename = "type")]
     pub item_type: String, // "File", "Page", "Discussion", "Assignment", "Quiz", "SubHeader", "ExternalUrl", "ExternalTool"
     pub content_id: Option<u32>,
-    pub html_url: Option<String>,
+    // pub html_url: Option<String>,
     pub url: Option<String>,
-    pub page_url: Option<String>,
+    // pub page_url: Option<String>,
     pub external_url: Option<String>,
-    pub position: u32,
-    pub indent: u32,
-    pub completion_requirement: Option<serde_json::Value>,
+    // pub position: u32,
+    // pub indent: u32,
+    // pub completion_requirement: Option<serde_json::Value>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Syllabus {
-    pub id: u32,
+    // pub id: u32,
     pub name: String,
     pub course_code: String,
     pub syllabus_body: Option<String>,
@@ -260,7 +260,7 @@ pub struct ProcessOptions {
     pub files_to_download: Mutex<Vec<File>>,
     pub ignore_matcher: Option<std::sync::Arc<ignore::gitignore::Gitignore>>,
     pub base_path: std::path::PathBuf,
-    pub dry_run: bool,
+    // pub dry_run: bool,
     pub save_json: bool,
     // Download
     pub progress_bars: indicatif::MultiProgress,

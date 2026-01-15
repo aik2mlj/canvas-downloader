@@ -252,7 +252,7 @@ async fn main() -> Result<()> {
         download_newer: args.download_newer,
         ignore_matcher,
         base_path: args.destination_folder.clone(),
-        dry_run: args.dry_run,
+        // dry_run: args.dry_run,
         save_json: !args.no_raw,
         // Download
         progress_bars: indicatif::MultiProgress::new(),
