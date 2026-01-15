@@ -2,7 +2,7 @@ use crate::canvas::{Course, ProcessOptions};
 use anyhow::{Context, Result};
 use serde_json::Value;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 pub fn print_all_courses_by_term(courses: &[Course]) {
@@ -68,9 +68,9 @@ pub fn print_all_courses_by_term(courses: &[Course]) {
 }
 
 pub fn ignored(
-    filepath: &PathBuf,
+    filepath: &Path,
     is_dir: bool,
-    base_path: &PathBuf,
+    base_path: &Path,
     ignore_matcher: Option<&ignore::gitignore::Gitignore>,
 ) -> bool {
     let matcher = match ignore_matcher {
@@ -88,9 +88,9 @@ pub fn ignored(
     ignored
 }
 
-fn create_folder_if_not_exist(folder_path: &PathBuf) -> Result<bool> {
+fn create_folder_if_not_exist(folder_path: &Path) -> Result<bool> {
     if !folder_path.exists() {
-        std::fs::create_dir_all(&folder_path).with_context(|| {
+        std::fs::create_dir_all(folder_path).with_context(|| {
             format!(
                 "Failed to create directory: {}",
                 folder_path.to_string_lossy()
@@ -102,7 +102,7 @@ fn create_folder_if_not_exist(folder_path: &PathBuf) -> Result<bool> {
 
 // return Ok(true) if folder created or already exists, Ok(false) if ignored
 pub fn create_folder_if_not_exist_or_ignored(
-    folder_path: &PathBuf,
+    folder_path: &Path,
     options: Arc<ProcessOptions>,
 ) -> Result<bool> {
     if ignored(
@@ -129,9 +129,9 @@ pub fn prettify_json(json_str: &str) -> Result<String> {
 /// and base_download_path is "/downloads", the raw path will be
 /// "/downloads/raw/course1/assignments/Assignment 1/{filename}"
 pub fn get_raw_json_path(
-    current_path: &PathBuf,
+    current_path: &Path,
     filename: &str,
-    base_path: &PathBuf,
+    base_path: &Path,
     save_json: bool,
 ) -> Result<Option<PathBuf>> {
     if !save_json {
@@ -139,9 +139,7 @@ pub fn get_raw_json_path(
     }
 
     // Calculate relative path from base to current location
-    let relative_path = current_path
-        .strip_prefix(base_path)
-        .unwrap_or(current_path.as_path());
+    let relative_path = current_path.strip_prefix(base_path).unwrap_or(current_path);
 
     // Create the mirrored structure in parallel "raw" folder
     let raw_path = base_path.join("raw").join(relative_path);

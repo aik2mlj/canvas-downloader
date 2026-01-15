@@ -16,7 +16,7 @@ mod users;
 mod utils;
 mod videos;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{
     Arc,
     atomic::{AtomicUsize, Ordering},
@@ -123,8 +123,8 @@ struct CommandLineOptions {
 }
 
 fn load_ignore_file(
-    ignore_file_path: &PathBuf,
-    base_path: &PathBuf,
+    ignore_file_path: &Path,
+    base_path: &Path,
 ) -> Result<ignore::gitignore::Gitignore> {
     let mut builder = GitignoreBuilder::new(base_path);
     builder.add(ignore_file_path);

@@ -54,7 +54,7 @@ pub async fn atomic_download_file(file: File, options: Arc<ProcessOptions>) -> R
 }
 
 async fn download_file(
-    (tmp_path, canvas_file): (&PathBuf, &File),
+    (tmp_path, canvas_file): (&Path, &File),
     options: Arc<ProcessOptions>,
 ) -> Result<()> {
     // Get file
@@ -221,7 +221,7 @@ pub async fn process_files(
     Ok(())
 }
 
-fn updated(filepath: &PathBuf, new_modified: &str) -> bool {
+fn updated(filepath: &Path, new_modified: &str) -> bool {
     (|| -> Result<bool> {
         let old_modified = std::fs::metadata(filepath)?.modified()?;
         let new_modified = std::time::SystemTime::from(DateTime::parse_from_rfc3339(new_modified)?);
