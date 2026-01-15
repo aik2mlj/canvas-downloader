@@ -45,8 +45,7 @@ pub async fn process_videos(
         let panopto_document = Document::from_read(video_html.as_bytes())?;
         let panopto_form = panopto_document
             .find(Name("form"))
-            .filter(|n| n.attr("data-tool-id") == Some("mediaweb.ap.panopto.com"))
-            .next();
+            .find(|n| n.attr("data-tool-id") == Some("mediaweb.ap.panopto.com"));
 
         // If no Panopto form found, course doesn't use Panopto
         let panopto_form = match panopto_form {
@@ -150,8 +149,7 @@ async fn process_video_folder(
     )?;
     let mut sessions_file = sessions_json
         .as_ref()
-        .map(|p| std::fs::File::create(p.clone()).ok())
-        .flatten();
+        .and_then(|p| std::fs::File::create(p.clone()).ok());
 
     for i in 0.. {
         let sessions_result = client
@@ -213,7 +211,7 @@ async fn process_video_folder(
             }
         }
         // End of page results
-        if sessions.Results.len() == 0 {
+        if sessions.Results.is_empty() {
             break;
         }
         for result in sessions.Results {
@@ -320,8 +318,8 @@ async fn process_session(
                         uri_id,
                         file_uri
                     );
-                    let download_file_name = if file_uri_ext == "" {
-                        format!("{}", result.SessionName)
+                    let download_file_name = if file_uri_ext.is_empty() {
+                        result.SessionName
                     } else {
                         format!("{}.{}", result.SessionName, file_uri_ext)
                     };

@@ -11,7 +11,7 @@ pub fn print_all_courses_by_term(courses: &[Course]) {
         let course_id: u32 = course.enrollment_term_id;
         grouped_courses
             .entry(course_id)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push((&course.course_code, &course.name));
     }
 
@@ -25,10 +25,9 @@ pub fn print_all_courses_by_term(courses: &[Course]) {
 
     // Print header
     println!(
-        "{:<10} | {:<width$} | {}",
+        "{:<10} | {:<width$} | Course Name",
         "Term ID",
         "Course Code",
-        "Course Name",
         width = max_code_width
     );
     println!("{}", "-".repeat(10 + 3 + max_code_width + 3 + 40));

@@ -179,10 +179,10 @@ fn generate_discussion_html(
     ));
     html.push_str("        <div class=\"discussion-meta\">\n");
 
-    if let Some(ref author) = discussion.author {
-        if let Some(ref display_name) = author.display_name {
-            html.push_str(&format!("            {}", html_escape(display_name)));
-        }
+    if let Some(author) = &discussion.author
+        && let Some(display_name) = &author.display_name
+    {
+        html.push_str(&format!("            {}", html_escape(display_name)));
     }
 
     if let Some(ref posted_at) = discussion.posted_at {
@@ -280,10 +280,10 @@ async fn process_discussion_view(
 
             for mut view in discussion_view.view {
                 // Map user_id to display_name
-                if let Some(user_id) = view.user_id {
-                    if let Some(display_name) = user_map.get(&user_id) {
-                        view.user_name = Some(display_name.clone());
-                    }
+                if let Some(user_id) = view.user_id
+                    && let Some(display_name) = user_map.get(&user_id)
+                {
+                    view.user_name = Some(display_name.clone());
                 }
 
                 comments.push(view.clone());

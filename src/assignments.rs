@@ -148,22 +148,22 @@ fn generate_assignment_html(assignment: &Assignment) -> String {
     }
 
     // Submission types
-    if let Some(ref submission_types) = assignment.submission_types {
-        if !submission_types.is_empty() {
-            html.push_str("        <div class=\"assignment-meta\">\n");
-            html.push_str(
-                "            <span class=\"assignment-meta-label\">Submission Types:</span>\n",
-            );
-            html.push_str("            <div class=\"submission-types\">\n");
-            for submission_type in submission_types {
-                html.push_str(&format!(
-                    "                <span class=\"submission-type\">{}</span>\n",
-                    html_escape(submission_type)
-                ));
-            }
-            html.push_str("            </div>\n");
-            html.push_str("        </div>\n");
+    if let Some(ref submission_types) = assignment.submission_types
+        && !submission_types.is_empty()
+    {
+        html.push_str("        <div class=\"assignment-meta\">\n");
+        html.push_str(
+            "            <span class=\"assignment-meta-label\">Submission Types:</span>\n",
+        );
+        html.push_str("            <div class=\"submission-types\">\n");
+        for submission_type in submission_types {
+            html.push_str(&format!(
+                "                <span class=\"submission-type\">{}</span>\n",
+                html_escape(submission_type)
+            ));
         }
+        html.push_str("            </div>\n");
+        html.push_str("        </div>\n");
     }
 
     // Description

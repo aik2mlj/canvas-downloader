@@ -257,7 +257,7 @@ async fn main() -> Result<()> {
         // Download
         progress_bars: indicatif::MultiProgress::new(),
         progress_style: {
-            let style_template = if termsize::get().map_or(false, |size| size.cols < 100) {
+            let style_template = if termsize::get().is_some_and(|size| size.cols < 100) {
                 "[{wide_bar:.cyan/blue}] {total_bytes} - {msg}"
             } else {
                 "[{bar:20.cyan/blue}] {bytes}/{total_bytes} - {bytes_per_sec} - {msg}"
@@ -304,10 +304,10 @@ async fn main() -> Result<()> {
             let matches_term = args
                 .term_ids
                 .as_ref()
-                .map_or(true, |ids| ids.contains(&course.enrollment_term_id));
+                .is_none_or(|ids| ids.contains(&course.enrollment_term_id));
 
             // Filter by course names if provided (exact match)
-            let matches_name = args.course_names.as_ref().map_or(true, |names| {
+            let matches_name = args.course_names.as_ref().is_none_or(|names| {
                 names
                     .iter()
                     .any(|name| &course.name == name || &course.course_code == name)

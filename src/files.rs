@@ -13,7 +13,7 @@ use reqwest::header;
 use crate::api::get_canvas_api;
 use crate::api::get_pages;
 use crate::canvas::{File, FileResult, FolderResult, ProcessOptions};
-use crate::utils::ignored;
+use crate::utils::{create_folder_if_not_exist_or_ignored, ignored};
 
 pub async fn atomic_download_file(file: File, options: Arc<ProcessOptions>) -> Result<()> {
     // Create tmp file from hash
@@ -21,7 +21,7 @@ pub async fn atomic_download_file(file: File, options: Arc<ProcessOptions>) -> R
     tmp_path.pop();
     let mut h = DefaultHasher::new();
     file.display_name.hash(&mut h);
-    tmp_path.push(&h.finish().to_string().add(".tmp"));
+    tmp_path.push(h.finish().to_string().add(".tmp"));
 
     // Aborted download?
     if let Err(e) = download_file((&tmp_path, &file), options.clone()).await {
@@ -127,24 +127,13 @@ pub async fn process_folders(
                         path.clone()
                     };
 
-                    // if the folder is ignored, do not process it or its contents
-                    if ignored(
-                        &folder_path,
-                        true,
-                        &options.base_path,
-                        options.ignore_matcher.as_deref(),
-                    ) {
-                        continue;
-                    }
-
-                    if !folder_path.exists() {
-                        if let Err(e) = std::fs::create_dir(&folder_path) {
-                            tracing::error!(
-                                "Failed to create directory: {}, err={e}",
-                                folder_path.to_string_lossy()
-                            );
+                    match create_folder_if_not_exist_or_ignored(&folder_path, &options) {
+                        Ok(false) => continue, // ignored
+                        Ok(true) => {}         // created or already exists
+                        Err(e) => {
+                            tracing::error!("{e:#}");
                             continue;
-                        };
+                        }
                     }
 
                     fork!(
@@ -275,15 +264,15 @@ pub async fn process_file_id(
     let file_resp = get_canvas_api(url.clone(), &options).await?;
     let file_result = file_resp.json::<File>().await;
     match file_result {
-        Result::Ok(mut file) => {
+        Ok(mut file) => {
             let sanitized_filename = sanitize_filename::sanitize(&file.display_name);
             let file_path = path.join(sanitized_filename);
             file.filepath = file_path;
-            return Ok(file);
+            Ok(file)
         }
         Err(e) => {
             tracing::error!("Error when getting file info at link:{url}, path:{path:?}\n{e:?}",);
-            return Err(Into::into(e));
+            Err(Into::into(e))
         }
     }
 }
@@ -330,7 +319,7 @@ pub async fn prepare_link_for_download(
         display_name: filename.to_string(),
         size: 0,
         url: link.clone(),
-        updated_at: updated_at,
+        updated_at,
         locked_for_user: false,
         filepath: path.join(sanitized_filename),
     };
