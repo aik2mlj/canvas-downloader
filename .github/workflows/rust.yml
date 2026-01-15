@@ -27,17 +27,31 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            exe: canvas-downloader
+            use_cross: false
+
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            use_cross: true
+
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            use_cross: true
+
           - target: aarch64-apple-darwin
             os: macos-latest
-            exe: canvas-downloader
+            use_cross: false
+
           - target: x86_64-apple-darwin
             os: macos-latest
-            exe: canvas-downloader
-          # Prefer MSVC on GitHub runners
+            use_cross: false
+
           - target: x86_64-pc-windows-msvc
             os: windows-latest
-            exe: canvas-downloader.exe
+            use_cross: false
+
+          - target: aarch64-pc-windows-msvc
+            os: windows-latest
+            use_cross: false
 
     steps:
       - uses: actions/checkout@v4
@@ -53,8 +67,18 @@ jobs:
           # keep caches separated per target
           key: ${{ matrix.target }}
 
+      # install cross only on linux builds that need it
+      - name: Install cross
+        if: matrix.use_cross
+        run: cargo install cross --git https://github.com/cross-rs/cross --locked
+
       - name: Build (release)
-        run: cargo build --release --verbose --target ${{ matrix.target }}
+        run: |
+          if [[ "${{ matrix.use_cross }}" == "true" ]]; then
+            cross build --release --verbose --target ${{ matrix.target }}
+          else
+            cargo build --release --verbose --target ${{ matrix.target }}
+          fi
 
       - name: Package artifact
         run: |
@@ -66,7 +90,11 @@ jobs:
             TAG="${GITHUB_SHA}"
           fi
 
-          EXEC="${{ matrix.exe }}"
+          EXEC="${NAME}"
+          if [[ "${{ matrix.target }}" == *windows* ]]; then
+            EXEC="${EXEC}.exe"
+          fi
+
           TARGET="${{ matrix.target }}"
 
           OUT_NAME="${NAME}-${TARGET}-${TAG}"
