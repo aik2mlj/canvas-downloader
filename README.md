@@ -2,7 +2,7 @@
 
 A command-line tool to download and organize all your Canvas course materials—files, syllabi, pages, modules, assignments, discussions, and announcements—into a clean local folder structure. Made in async Rust⚡.
 
-This is a maintained fork of [this project](https://github.com/bnjmnt4n/canvas-downloader).
+This is a maintained fork of [this project](https://github.com/bnjmnt4n/canvas-downloader). Also shout out to [this previous fork](https://github.com/rhgndf/canvas-downloader) that implements downloading additional materials.
 
 [![Packaging status](https://repology.org/badge/vertical-allrepos/canvas-downloader.svg)](https://repology.org/project/canvas-downloader/versions)
 
@@ -159,7 +159,7 @@ Options:
   -V, --version                      Print version
 ```
 
-## MacOS Setup
+## macOS Setup
 
 If you download the executable from Releases, the following commands may be needed because the binary isn't signed with an Apple developer account:
 
