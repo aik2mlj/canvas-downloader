@@ -49,18 +49,7 @@ xattr -d com.apple.quarantine canvas-downloader
 
 ### 1. Create Configuration File
 
-Create a config file in TOML format with your Canvas URL and access token:
-
-```toml
-canvas_url = "https://canvas.stanford.edu"
-canvas_token = "12345~jfkdlejoiferjiofu"
-```
-
-**How to get your token:**
-
-- Log in to Canvas → Account → Settings → **New Access Token**
-
-**Config file locations (searched in order):**
+You can copy the [example config](examples/config.toml) into one of the **config file locations (searched in order):**
 
 1. Custom path via `--config` option
 1. `canvas-downloader.toml` in current directory
@@ -68,6 +57,12 @@ canvas_token = "12345~jfkdlejoiferjiofu"
    - Linux: `~/.config/canvas-downloader/config.toml`
    - macOS: `~/.config/canvas-downloader/config.toml` or `~/Library/Application Support/canvas-downloader/config.toml`
    - Windows: `%APPDATA%\canvas-downloader\config.toml`
+
+Then modify it to your Canvas instance URL and access token.
+
+#### How to get your token
+
+- Log in to Canvas → Account → Settings → **New Access Token**
 
 ### 2. Discover Your Courses
 
@@ -91,13 +86,13 @@ Term ID    | Course Code | Course Name
 
 You can download courses by term ID or by course name/code:
 
-**Download by term (all courses in specific terms):**
+**Download by terms (all courses in specific terms):**
 
 ```shell
 $ canvas-downloader -t 115 120
 ```
 
-**Download by course name or code (specific courses only):**
+**Download by course names and/or codes (specific courses only):**
 
 ```shell
 $ canvas-downloader -c CS1101S "Introduction to Data Structures"
@@ -148,7 +143,7 @@ The tool automatically loads `.canvasignore` from the current directory if it ex
 $ canvas-downloader -t 115 -i custom-ignore.txt
 ```
 
-See `.canvasignore.example` for more patterns.
+See the [example file](examples/.canvasignore) for more patterns.
 
 ### Keep Your Files Updated
 

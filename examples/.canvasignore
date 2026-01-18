@@ -1,6 +1,8 @@
 # Example ignore file for canvas-downloader
 # Follows .gitignore pattern syntax
 # Patterns are matched relative to the destination folder (-d option)
+#
+# Put this under the current working directory or specify a custom path with the -i option
 
 # Ignore all PDF files
 *.pdf

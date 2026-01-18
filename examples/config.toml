@@ -1,0 +1,14 @@
+# Example of configuration file in TOML format
+#
+# Put this into the platform-specific configuration directory
+#     Linux: ~/.config/canvas-downloader/config.toml
+#     macOS: ~/.config/canvas-downloader/config.toml or ~/Library/Application Support/canvas-downloader/config.toml
+#     Windows: %APPDATA%\canvas-downloader\config.toml
+# Or, rename it to `canvas-downloader.toml` and put it under the current working directory
+#
+# How to get your token:
+#     Log in to Canvas → Account → Settings → New Access Token
+
+
+canvas_url = "https://canvas.stanford.edu"
+canvas_token = "12345~jfkdlejoiferjiofu"
