@@ -22,6 +22,13 @@ paru -S canvas-downloader-bin
 paru -S canvas-downloader
 ```
 
+#### 🍦 Scoop (Windows)
+
+```powershell
+scoop bucket add aik2mlj https://github.com/aik2mlj/scoop-bucket  # add custom bucket
+scoop install aik2mlj/canvas-downloader
+```
+
 #### 🛠️ Cargo (All platforms)
 
 ```bash
