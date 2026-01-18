@@ -11,7 +11,6 @@ This is a maintained fork of [this project](https://github.com/bnjmnt4n/canvas-d
 ```bash
 brew tap aik2mlj/tap  # add custom tap
 brew install canvas-downloader
-
 ```
 
 #### 📦 AUR (Arch Linux)
