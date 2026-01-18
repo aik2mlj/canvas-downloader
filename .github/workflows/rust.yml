@@ -96,19 +96,31 @@ jobs:
           fi
 
           TARGET="${{ matrix.target }}"
+          BASENAME="${NAME}-${TAG}-${TARGET}"
 
-          OUT_NAME="${NAME}-${TARGET}-${TAG}"
-          if [[ "$EXEC" == *.exe ]]; then
-            OUT_NAME="${OUT_NAME}.exe"
+          BIN_PATH="target/${TARGET}/release/${EXEC}"
+          chmod +x "$BIN_PATH" || true
+
+          cp "$BIN_PATH" "artifacts/${EXEC}"
+
+          cd artifacts
+
+          if [[ "${TARGET}" == *windows* ]]; then
+            7z a -tzip "${BASENAME}.zip" "${EXEC}"
+          else
+            tar -czf "${BASENAME}.tar.gz" "${EXEC}"
           fi
 
-          mv "target/${TARGET}/release/${EXEC}" "artifacts/${OUT_NAME}"
+          # Remove the copied binary so only archives remain
+          rm -f "${EXEC}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: result-${{ matrix.target }}
-          path: artifacts/*
+          path: |
+            artifacts/*.zip
+            artifacts/*.tar.gz
           if-no-files-found: error
 
   deploy:
