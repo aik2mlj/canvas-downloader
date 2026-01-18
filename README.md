@@ -4,7 +4,37 @@ A command-line tool to download and organize all your Canvas course materials—
 
 This is a maintained fork of [this project](https://github.com/bnjmnt4n/canvas-downloader). Also shout out to [this previous fork](https://github.com/rhgndf/canvas-downloader) that implements downloading additional materials.
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/canvas-downloader.svg)](https://repology.org/project/canvas-downloader/versions)
+## Installation
+
+#### 🍺 Homebrew (macOS/Linux) <a href="https://repology.org/project/canvas-downloader/versions"> <img src="https://repology.org/badge/vertical-allrepos/canvas-downloader.svg" alt="Packaging status" align="right"> </a>
+
+```bash
+brew tap aik2mlj/tap  # add custom tap
+brew install canvas-downloader
+
+```
+
+#### 📦 AUR (Arch Linux)
+
+```bash
+# use pre-built binary
+paru -S canvas-downloader-bin
+# or if you prefer, compile from source
+paru -S canvas-downloader
+```
+
+#### ⬇️ Download from Releases (Linux/macOS/Windows)
+
+- Download the corresponding binary archive from [Releases](https://github.com/aik2mlj/canvas-downloader/releases)
+- Decompress the archive file
+- Directly run the executable from terminal, or move it to `$PATH` for easier access
+
+For macOS, the following commands may be needed because the binary isn't signed with an Apple developer account. Also see [Apple's official doc](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac?utm_source=chatgpt.com) on this.
+
+```bash
+# Remove quarantine attribute
+xattr -d com.apple.quarantine canvas-downloader
+```
 
 ## Quick Start
 
@@ -158,17 +188,3 @@ Options:
   -h, --help                         Print help
   -V, --version                      Print version
 ```
-
-## macOS Setup
-
-If you download the executable from Releases, the following commands may be needed because the binary isn't signed with an Apple developer account:
-
-```shell
-# Remove quarantine attribute
-$ xattr -d com.apple.quarantine canvas-downloader
-
-# Make executable
-$ chmod +x canvas-downloader
-```
-
-Also see [Apple's official doc](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac?utm_source=chatgpt.com) on this.
