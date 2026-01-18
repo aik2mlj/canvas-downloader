@@ -22,7 +22,17 @@ paru -S canvas-downloader-bin
 paru -S canvas-downloader
 ```
 
-#### ⬇️ Download from Releases (Linux/macOS/Windows)
+#### 🛠️ Cargo (All platforms)
+
+```bash
+# use pre-built binary
+# you need to have cargo-binstall installed first
+cargo binstall canvas-downloader
+# or compile from source
+cargo install canvas-downloader
+```
+
+#### ⬇️ Download from Releases (All platforms)
 
 - Download the corresponding binary archive from [Releases](https://github.com/aik2mlj/canvas-downloader/releases)
 - Decompress the archive file
