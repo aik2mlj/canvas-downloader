@@ -514,16 +514,7 @@ async fn main() -> Result<()> {
         }
 
         // Display files to be downloaded
-        println!(
-            "Will download {} file{} ({}):",
-            files_to_download.len(),
-            if files_to_download.len() == 1 {
-                ""
-            } else {
-                "s"
-            },
-            format_bytes(total_size)
-        );
+        println!("Files queued:");
         println!();
         for canvas_file in files_to_download.iter() {
             println!(
