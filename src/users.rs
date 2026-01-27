@@ -40,6 +40,8 @@ pub async fn process_users(
                 .write_all(pretty_json.as_bytes())
                 .with_context(|| format!("Unable to write to file for {:?}", users_path_str))?;
         }
+
+        println!("👥 Users saved");
     }
 
     Ok(())

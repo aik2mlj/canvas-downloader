@@ -84,6 +84,10 @@ pub async fn process_modules(
         };
     }
 
+    if has_modules {
+        println!("📦 Modules synced");
+    }
+
     Ok(())
 }
 

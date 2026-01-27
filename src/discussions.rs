@@ -131,6 +131,15 @@ pub async fn process_discussions(
             }
         }
     }
+
+    if has_discussions {
+        if announcement {
+            println!("📢 Announcements synced");
+        } else {
+            println!("💬 Discussions synced");
+        }
+    }
+
     Ok(())
 }
 

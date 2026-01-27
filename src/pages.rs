@@ -79,6 +79,10 @@ pub async fn process_pages(
         };
     }
 
+    if has_pages {
+        println!("📄 Pages synced");
+    }
+
     Ok(())
 }
 

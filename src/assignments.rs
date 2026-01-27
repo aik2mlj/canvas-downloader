@@ -94,6 +94,11 @@ pub async fn process_assignments(
             }
         }
     }
+
+    if has_assignments {
+        println!("📝 Assignments synced");
+    }
+
     Ok(())
 }
 

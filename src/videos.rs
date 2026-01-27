@@ -112,6 +112,9 @@ pub async fn process_videos(
         options,
     )
     .await?;
+
+    println!("🎬 Videos synced");
+
     Ok(())
 }
 

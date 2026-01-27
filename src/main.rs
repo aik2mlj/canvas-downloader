@@ -544,6 +544,8 @@ async fn main() -> Result<()> {
         // Sanity check: running tasks trying to acquire sem will panic
         options.sem_requests.close();
         assert_eq!(options.n_active_requests.load(Ordering::Acquire), 0);
+
+        println!("📁 Files downloaded");
     }
 
     Ok(())

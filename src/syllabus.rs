@@ -67,6 +67,8 @@ pub async fn process_syllabus(
                         .with_context(|| {
                             format!("Could not write to file {:?}", syllabus_html_path)
                         })?;
+
+                    println!("📜 Syllabus synced");
                 } else {
                     tracing::debug!(
                         "No syllabus content found for course {}",
