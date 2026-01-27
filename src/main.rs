@@ -355,9 +355,12 @@ async fn main() -> Result<()> {
         })?;
     }
 
-    for course in courses_to_download {
+    for course in &courses_to_download {
         println!("  * {} - {}", course.course_code, course.name);
+    }
+    println!();
 
+    for course in courses_to_download {
         // Prep path and mkdir -p
         let course_folder_path = args
             .destination_folder
