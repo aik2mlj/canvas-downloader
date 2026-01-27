@@ -134,9 +134,12 @@ pub async fn process_discussions(
     }
 
     if has_discussions {
+        let course = path.file_name().unwrap_or_default().to_string_lossy();
         if announcement {
+            tracing::debug!("📢 Announcements synced for {}", course);
             options.n_announcements.fetch_add(1, Ordering::Relaxed);
         } else {
+            tracing::debug!("💬 Discussions synced for {}", course);
             options.n_discussions.fetch_add(1, Ordering::Relaxed);
         }
     }

@@ -86,6 +86,10 @@ pub async fn process_modules(
     }
 
     if has_modules {
+        tracing::debug!(
+            "📦 Modules synced for {}",
+            path.file_name().unwrap_or_default().to_string_lossy()
+        );
         options.n_modules.fetch_add(1, Ordering::Relaxed);
     }
 

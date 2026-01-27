@@ -42,6 +42,13 @@ pub async fn process_users(
                 .with_context(|| format!("Unable to write to file for {:?}", users_path_str))?;
         }
 
+        tracing::debug!(
+            "👥 Users saved for {}",
+            parent_path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+        );
         options.n_users.fetch_add(1, Ordering::Relaxed);
     }
 

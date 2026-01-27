@@ -97,6 +97,10 @@ pub async fn process_assignments(
     }
 
     if has_assignments {
+        tracing::debug!(
+            "📝 Assignments synced for {}",
+            path.file_name().unwrap_or_default().to_string_lossy()
+        );
         options.n_assignments.fetch_add(1, Ordering::Relaxed);
     }
 

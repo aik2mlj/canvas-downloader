@@ -69,6 +69,7 @@ pub async fn process_syllabus(
                             format!("Could not write to file {:?}", syllabus_html_path)
                         })?;
 
+                    tracing::debug!("📜 Syllabus synced for {}", syllabus.course_code);
                     options.n_syllabi.fetch_add(1, Ordering::Relaxed);
                 } else {
                     tracing::debug!(

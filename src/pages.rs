@@ -81,6 +81,10 @@ pub async fn process_pages(
     }
 
     if has_pages {
+        tracing::debug!(
+            "📄 Pages synced for {}",
+            path.file_name().unwrap_or_default().to_string_lossy()
+        );
         options.n_pages.fetch_add(1, Ordering::Relaxed);
     }
 

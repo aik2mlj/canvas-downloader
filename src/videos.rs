@@ -103,6 +103,10 @@ pub async fn process_videos(
     if !create_folder_if_not_exist_or_ignored(&video_folder_path, &options)? {
         return Ok(());
     }
+    tracing::debug!(
+        "🎬 Videos synced for {}",
+        path.file_name().unwrap_or_default().to_string_lossy()
+    );
     options.n_videos.fetch_add(1, Ordering::Relaxed);
 
     process_video_folder(
