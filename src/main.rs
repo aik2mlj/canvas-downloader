@@ -271,6 +271,15 @@ async fn main() -> Result<()> {
         n_active_requests: AtomicUsize::new(0),
         sem_requests: tokio::sync::Semaphore::new(8), // WARN magic constant.
         notify_main: tokio::sync::Notify::new(),
+        // Progress counters
+        n_syllabi: AtomicUsize::new(0),
+        n_users: AtomicUsize::new(0),
+        n_assignments: AtomicUsize::new(0),
+        n_pages: AtomicUsize::new(0),
+        n_discussions: AtomicUsize::new(0),
+        n_announcements: AtomicUsize::new(0),
+        n_modules: AtomicUsize::new(0),
+        n_videos: AtomicUsize::new(0),
         // TODO handle canvas rate limiting errors, maybe scale up if possible
     });
 
@@ -403,6 +412,36 @@ async fn main() -> Result<()> {
     // 4. No busy wait: Last task will see that there are 0 active requests and notify main
     options.notify_main.notified().await;
     assert_eq!(options.n_active_requests.load(Ordering::Acquire), 0);
+
+    // Print sync summary
+    let mut synced = Vec::new();
+    if options.n_syllabi.load(Ordering::Relaxed) > 0 {
+        synced.push("📜 Syllabi");
+    }
+    if options.n_users.load(Ordering::Relaxed) > 0 {
+        synced.push("👥 Users");
+    }
+    if options.n_assignments.load(Ordering::Relaxed) > 0 {
+        synced.push("📝 Assignments");
+    }
+    if options.n_pages.load(Ordering::Relaxed) > 0 {
+        synced.push("📄 Pages");
+    }
+    if options.n_discussions.load(Ordering::Relaxed) > 0 {
+        synced.push("💬 Discussions");
+    }
+    if options.n_announcements.load(Ordering::Relaxed) > 0 {
+        synced.push("📢 Announcements");
+    }
+    if options.n_modules.load(Ordering::Relaxed) > 0 {
+        synced.push("📦 Modules");
+    }
+    if options.n_videos.load(Ordering::Relaxed) > 0 {
+        synced.push("🎬 Videos");
+    }
+    if !synced.is_empty() {
+        println!("{} synced", synced.join(", "));
+    }
     println!();
 
     let files_to_download = options.files_to_download.lock().await;

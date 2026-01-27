@@ -1,6 +1,7 @@
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 
 use anyhow::{Context, Result};
 
@@ -96,7 +97,7 @@ pub async fn process_assignments(
     }
 
     if has_assignments {
-        println!("📝 Assignments synced");
+        options.n_assignments.fetch_add(1, Ordering::Relaxed);
     }
 
     Ok(())

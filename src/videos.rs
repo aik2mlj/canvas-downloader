@@ -2,6 +2,7 @@ use std::ffi::OsStr;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 
 use anyhow::{Result, anyhow};
 use chrono::{TimeZone, Utc};
@@ -102,6 +103,8 @@ pub async fn process_videos(
     if !create_folder_if_not_exist_or_ignored(&video_folder_path, &options)? {
         return Ok(());
     }
+    options.n_videos.fetch_add(1, Ordering::Relaxed);
+
     process_video_folder(
         (
             panopto_host,
@@ -112,8 +115,6 @@ pub async fn process_videos(
         options,
     )
     .await?;
-
-    println!("🎬 Videos synced");
 
     Ok(())
 }

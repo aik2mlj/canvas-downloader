@@ -1,6 +1,7 @@
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 
 use anyhow::{Context, Result};
 
@@ -41,7 +42,7 @@ pub async fn process_users(
                 .with_context(|| format!("Unable to write to file for {:?}", users_path_str))?;
         }
 
-        println!("👥 Users saved");
+        options.n_users.fetch_add(1, Ordering::Relaxed);
     }
 
     Ok(())

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 
 use anyhow::{Context, Result};
 
@@ -134,9 +135,9 @@ pub async fn process_discussions(
 
     if has_discussions {
         if announcement {
-            println!("📢 Announcements synced");
+            options.n_announcements.fetch_add(1, Ordering::Relaxed);
         } else {
-            println!("💬 Discussions synced");
+            options.n_discussions.fetch_add(1, Ordering::Relaxed);
         }
     }
 

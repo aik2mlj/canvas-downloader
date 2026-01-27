@@ -269,4 +269,13 @@ pub struct ProcessOptions {
     pub n_active_requests: AtomicUsize, // main() waits for this to be 0
     pub sem_requests: tokio::sync::Semaphore, // Limit #active requests
     pub notify_main: tokio::sync::Notify,
+    // Progress counters
+    pub n_syllabi: AtomicUsize,
+    pub n_users: AtomicUsize,
+    pub n_assignments: AtomicUsize,
+    pub n_pages: AtomicUsize,
+    pub n_discussions: AtomicUsize,
+    pub n_announcements: AtomicUsize,
+    pub n_modules: AtomicUsize,
+    pub n_videos: AtomicUsize,
 }

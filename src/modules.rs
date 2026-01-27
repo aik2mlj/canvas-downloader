@@ -1,6 +1,7 @@
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 
 use anyhow::{Context, Result};
 
@@ -85,7 +86,7 @@ pub async fn process_modules(
     }
 
     if has_modules {
-        println!("📦 Modules synced");
+        options.n_modules.fetch_add(1, Ordering::Relaxed);
     }
 
     Ok(())

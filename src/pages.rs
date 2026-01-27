@@ -1,6 +1,7 @@
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 
 use anyhow::{Context, Result};
 
@@ -80,7 +81,7 @@ pub async fn process_pages(
     }
 
     if has_pages {
-        println!("📄 Pages synced");
+        options.n_pages.fetch_add(1, Ordering::Relaxed);
     }
 
     Ok(())
