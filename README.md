@@ -195,6 +195,7 @@ Options:
   -i, --ignore-file <FILE>           Path to ignore patterns file [default: .canvasignore]
       --dry-run                      Preview downloads without executing
       --no-raw                       Do not save raw JSON responses
+      --no-submissions               Do not download assignment submission files
   -v, --verbose                      Enable debug logging
   -h, --help                         Print help
   -V, --version                      Print version

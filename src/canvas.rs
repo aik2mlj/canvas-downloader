@@ -7,6 +7,8 @@ use tokio::sync::Mutex;
 pub struct Credentials {
     pub canvas_url: String,
     pub canvas_token: String,
+    #[serde(default)]
+    pub no_submissions: bool,
 }
 
 #[derive(Deserialize)]
@@ -262,6 +264,7 @@ pub struct ProcessOptions {
     pub base_path: std::path::PathBuf,
     // pub dry_run: bool,
     pub save_json: bool,
+    pub skip_submissions: bool,
     // Download
     pub progress_bars: indicatif::MultiProgress,
     pub progress_style: indicatif::ProgressStyle,

@@ -118,6 +118,9 @@ struct CommandLineOptions {
     #[arg(long, default_value = "false", help = "Do not save raw JSON responses")]
     no_raw: bool,
 
+    #[arg(long, help = "Do not download assignment submission files")]
+    no_submissions: bool,
+
     #[arg(short = 'v', long, help = "Enable debug logging")]
     verbose: bool,
 }
@@ -254,6 +257,7 @@ async fn main() -> Result<()> {
         base_path: args.destination_folder.clone(),
         // dry_run: args.dry_run,
         save_json: !args.no_raw,
+        skip_submissions: args.no_submissions || cred.no_submissions,
         // Download
         progress_bars: indicatif::MultiProgress::new(),
         progress_style: {
