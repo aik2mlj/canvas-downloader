@@ -19,7 +19,7 @@ use crate::files::filter_files;
 use crate::utils::{create_folder_if_not_exist_or_ignored, get_raw_json_path, prettify_json};
 
 pub async fn process_videos(
-    (url, id, path): (String, u32, PathBuf),
+    (url, id, path): (String, u64, PathBuf),
     options: Arc<ProcessOptions>,
 ) -> Result<()> {
     let session = get_canvas_api(

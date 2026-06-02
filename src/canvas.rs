@@ -13,15 +13,15 @@ pub struct Credentials {
 
 #[derive(Deserialize)]
 pub struct Course {
-    pub id: u32,
+    pub id: u64,
     pub name: String,
     pub course_code: String,
-    pub enrollment_term_id: u32,
+    pub enrollment_term_id: u64,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct User {
-    pub id: u32,
+    pub id: u64,
     // pub name: String,
 }
 
@@ -34,13 +34,13 @@ pub(crate) enum FolderResult {
 
 #[derive(Deserialize)]
 pub struct Folder {
-    // pub id: u32,
+    // pub id: u64,
     pub name: String,
     pub folders_url: String,
     pub files_url: String,
     // pub for_submissions: bool,
     // pub can_upload: bool,
-    pub parent_folder_id: Option<u32>,
+    pub parent_folder_id: Option<u64>,
 }
 
 #[derive(Deserialize)]
@@ -59,7 +59,7 @@ pub(crate) enum PageResult {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Page {
-    // pub page_id: u32,
+    // pub page_id: u64,
     pub url: String,
     pub title: String,
     // pub updated_at: String,
@@ -68,7 +68,7 @@ pub struct Page {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct PageBody {
-    // pub page_id: u32,
+    // pub page_id: u64,
     // pub url: String,
     pub title: String,
     pub body: Option<String>,
@@ -84,7 +84,7 @@ pub(crate) enum AssignmentResult {
 }
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Assignment {
-    pub id: u32,
+    pub id: u64,
     pub name: String,
     pub description: Option<String>,
     pub created_at: Option<String>,
@@ -94,7 +94,7 @@ pub struct Assignment {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Submission {
-    // pub id: Option<u32>,
+    // pub id: Option<u64>,
     // pub body: Option<String>,
     #[serde(default)]
     pub attachments: Vec<File>,
@@ -108,7 +108,7 @@ pub(crate) enum DiscussionResult {
 }
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Discussion {
-    pub id: u32,
+    pub id: u64,
     pub title: String,
     pub message: String,
     pub posted_at: Option<String>,
@@ -118,28 +118,28 @@ pub struct Discussion {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct DiscussionAuthor {
-    pub id: Option<u32>,
+    pub id: Option<u64>,
     pub display_name: Option<String>,
     pub avatar_image_url: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct DiscussionView {
-    // pub unread_entries: Vec<u32>,
+    // pub unread_entries: Vec<u64>,
     pub participants: Vec<Participant>,
     pub view: Vec<Comments>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Participant {
-    pub id: u32,
+    pub id: u64,
     pub display_name: String,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Comments {
-    // pub id: u32,
-    pub user_id: Option<u32>,
+    // pub id: u64,
+    pub user_id: Option<u64>,
     pub user_name: Option<String>,
     pub message: Option<String>,
     pub created_at: Option<String>,
@@ -149,8 +149,8 @@ pub struct Comments {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct File {
-    pub id: u32,
-    pub folder_id: Option<u32>,
+    pub id: u64,
+    pub folder_id: Option<u64>,
     pub display_name: String,
     pub size: u64,
     pub url: String,
@@ -169,7 +169,7 @@ pub struct Session {
 #[derive(Clone, Debug, Deserialize)]
 #[allow(non_snake_case)]
 pub struct PanoptoSessionInfo {
-    // pub TotalNumber: u32,
+    // pub TotalNumber: u64,
     pub Results: Vec<PanoptoResult>,
     pub Subfolders: Vec<PanoptoSubfolder>,
 }
@@ -208,16 +208,16 @@ pub(crate) enum ModuleResult {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Module {
-    // pub id: u32,
+    // pub id: u64,
     pub name: String,
-    // pub position: u32,
+    // pub position: u64,
     // pub unlock_at: Option<String>,
     // pub require_sequential_progress: Option<bool>,
     // pub publish_final_grade: Option<bool>,
-    // pub prerequisite_module_ids: Vec<u32>,
+    // pub prerequisite_module_ids: Vec<u64>,
     // pub state: Option<String>,
     // pub completed_at: Option<String>,
-    // pub items_count: u32,
+    // pub items_count: u64,
     pub items_url: String,
 }
 
@@ -230,23 +230,23 @@ pub(crate) enum ModuleItemResult {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct ModuleItem {
-    // pub id: u32,
+    // pub id: u64,
     pub title: String,
     #[serde(rename = "type")]
     pub item_type: String, // "File", "Page", "Discussion", "Assignment", "Quiz", "SubHeader", "ExternalUrl", "ExternalTool"
-    pub content_id: Option<u32>,
+    pub content_id: Option<u64>,
     // pub html_url: Option<String>,
     pub url: Option<String>,
     // pub page_url: Option<String>,
     pub external_url: Option<String>,
-    // pub position: u32,
-    // pub indent: u32,
+    // pub position: u64,
+    // pub indent: u64,
     // pub completion_requirement: Option<serde_json::Value>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Syllabus {
-    // pub id: u32,
+    // pub id: u64,
     pub name: String,
     pub course_code: String,
     pub syllabus_body: Option<String>,

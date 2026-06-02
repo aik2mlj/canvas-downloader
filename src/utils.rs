@@ -5,10 +5,10 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 pub fn print_all_courses_by_term(courses: &[Course]) {
-    let mut grouped_courses: HashMap<u32, Vec<(&str, &str)>> = HashMap::new();
+    let mut grouped_courses: HashMap<u64, Vec<(&str, &str)>> = HashMap::new();
 
     for course in courses.iter() {
-        let course_id: u32 = course.enrollment_term_id;
+        let course_id: u64 = course.enrollment_term_id;
         grouped_courses
             .entry(course_id)
             .or_default()

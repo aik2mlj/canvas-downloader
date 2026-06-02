@@ -10,7 +10,7 @@ use crate::canvas::{ProcessOptions, Syllabus};
 use crate::utils::{get_raw_json_path, prettify_json};
 
 pub async fn process_syllabus(
-    (course_id, path): (u32, PathBuf),
+    (course_id, path): (u64, PathBuf),
     options: Arc<ProcessOptions>,
 ) -> Result<()> {
     // Get syllabus from Canvas API
