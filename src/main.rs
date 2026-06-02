@@ -92,7 +92,7 @@ struct CommandLineOptions {
         num_args(1..),
         help = "Term IDs to download"
     )]
-    term_ids: Option<Vec<u32>>,
+    term_ids: Option<Vec<u64>>,
 
     #[arg(
         short = 'c',
@@ -392,7 +392,7 @@ async fn main() -> Result<()> {
         fork!(
             process_data,
             (course_api_link, course.id, course_folder_path.clone()),
-            (String, u32, PathBuf),
+            (String, u64, PathBuf),
             options.clone()
         );
 
@@ -403,7 +403,7 @@ async fn main() -> Result<()> {
                 course.id,
                 course_folder_path.clone()
             ),
-            (String, u32, PathBuf),
+            (String, u64, PathBuf),
             options.clone()
         );
     }
@@ -589,7 +589,7 @@ async fn main() -> Result<()> {
 }
 
 async fn process_data(
-    (url, course_id, path): (String, u32, PathBuf),
+    (url, course_id, path): (String, u64, PathBuf),
     options: Arc<ProcessOptions>,
 ) -> Result<()> {
     fork!(
@@ -631,7 +631,7 @@ async fn process_data(
     fork!(
         process_syllabus,
         (course_id, path.clone()),
-        (u32, PathBuf),
+        (u64, PathBuf),
         options.clone()
     );
     Ok(())

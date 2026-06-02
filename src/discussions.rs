@@ -285,7 +285,7 @@ async fn process_discussion_view(
     match discussion_view_result {
         Result::Ok(discussion_view) => {
             // Create a mapping from user_id to display_name
-            let user_map: HashMap<u32, String> = discussion_view
+            let user_map: HashMap<u64, String> = discussion_view
                 .participants
                 .iter()
                 .map(|p| (p.id, p.display_name.clone()))
