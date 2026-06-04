@@ -1,13 +1,20 @@
 use crate::canvas::ProcessOptions;
 use anyhow::{Context, Error, Result};
 use rand::Rng;
-use reqwest::{header, Response};
+use reqwest::{Response, header};
 use std::time::Duration;
+
+const CANVAS_API_TIMEOUT: Duration = Duration::from_secs(60);
+const CANVAS_API_RETRIES: u32 = 3;
 
 pub async fn get_pages(link: String, options: &ProcessOptions) -> Result<Vec<Response>> {
     fn parse_next_page(resp: &Response) -> Result<Option<String>> {
         // Parse LINK header
-        let Some(links) = resp.headers().get(header::LINK).and_then(|v| v.to_str().ok()) else {
+        let Some(links) = resp
+            .headers()
+            .get(header::LINK)
+            .and_then(|v| v.to_str().ok())
+        else {
             return Ok(None);
         };
         let rels = parse_link_header::parse_with_rel(links).context(format!(
@@ -35,19 +42,23 @@ pub async fn get_pages(link: String, options: &ProcessOptions) -> Result<Vec<Res
 }
 
 pub async fn get_canvas_api(url: String, options: &ProcessOptions) -> Result<Response> {
-    for retry in 0..3 {
+    for retry in 0..CANVAS_API_RETRIES {
         let resp = options
             .client
             .get(&url)
             .bearer_auth(&options.canvas_token)
-            .timeout(Duration::from_secs(10))
+            .timeout(CANVAS_API_TIMEOUT)
             .send()
             .await;
 
         match resp {
             Ok(resp) => {
-                if resp.status() == reqwest::StatusCode::FORBIDDEN {
-                    if retry == 2 {
+                let status = resp.status();
+                if status == reqwest::StatusCode::FORBIDDEN
+                    || status == reqwest::StatusCode::TOO_MANY_REQUESTS
+                    || status.is_server_error()
+                {
+                    if retry + 1 == CANVAS_API_RETRIES {
                         // Log more specific error information on final retry
                         if url.contains("users") {
                             tracing::debug!(
@@ -70,8 +81,11 @@ pub async fn get_canvas_api(url: String, options: &ProcessOptions) -> Result<Res
                 }
             }
             Err(e) => {
-                tracing::error!("Canvas request error uri: {} {}", url, e);
-                return Err(e.into());
+                if retry + 1 == CANVAS_API_RETRIES {
+                    tracing::error!("Canvas request error uri: {} {}", url, e);
+                    return Err(e)
+                        .with_context(|| format!("Canvas request failed after retries: {url}"));
+                }
             }
         }
 
@@ -82,10 +96,11 @@ pub async fn get_canvas_api(url: String, options: &ProcessOptions) -> Result<Res
         let wait_time = Duration::from_millis(exponential_delay + jitter);
 
         tracing::debug!(
-            "Rate limited (403) for {}, waiting {:?} before retry {}/3",
+            "Retrying Canvas request for {}, waiting {:?} before retry {}/{}",
             url,
             wait_time,
-            retry + 1
+            retry + 1,
+            CANVAS_API_RETRIES
         );
         tokio::time::sleep(wait_time).await;
     }

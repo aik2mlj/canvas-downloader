@@ -198,6 +198,7 @@ async fn main() -> Result<()> {
         .with_context(|| format!("Could not read config file: {}", config_path.display()))?;
     let cred: canvas::Credentials =
         toml::from_str(&config_content).with_context(|| "Config file is not valid TOML")?;
+    let canvas_url = cred.canvas_url.trim_end_matches('/').to_string();
 
     // Create sub-folder if not exists
     if !args.destination_folder.exists() {
@@ -217,7 +218,7 @@ async fn main() -> Result<()> {
         .http2_keep_alive_interval(Some(Duration::from_secs(2)))
         .build()
         .with_context(|| "Failed to create HTTP client")?;
-    let user_link = format!("{}/api/v1/users/self", cred.canvas_url);
+    let user_link = format!("{}/api/v1/users/self", canvas_url);
     let user = client
         .get(&user_link)
         .bearer_auth(&cred.canvas_token)
@@ -226,7 +227,7 @@ async fn main() -> Result<()> {
         .json::<canvas::User>()
         .await
         .with_context(|| "Failed to get user info")?;
-    let courses_link = format!("{}/api/v1/users/self/courses", cred.canvas_url);
+    let courses_link = format!("{}/api/v1/users/self/courses", canvas_url);
 
     // Load ignore file if it exists
     let ignore_matcher = if args.ignore_file.exists() {
@@ -251,7 +252,7 @@ async fn main() -> Result<()> {
 
     let options = Arc::new(ProcessOptions {
         canvas_token: cred.canvas_token.clone(),
-        canvas_url: cred.canvas_url.clone(),
+        canvas_url: canvas_url.clone(),
         client: client.clone(),
         user: user.clone(),
         // Process
@@ -379,7 +380,7 @@ async fn main() -> Result<()> {
         // Prep URL for course's root folder
         let course_folders_link = format!(
             "{}/api/v1/courses/{}/folders/by_path/",
-            cred.canvas_url, course.id
+            canvas_url, course.id
         );
 
         let folder_path = course_folder_path.join("files"); // TODO: if no files, skip creating folder
@@ -392,7 +393,7 @@ async fn main() -> Result<()> {
             );
         }
 
-        let course_api_link = format!("{}/api/v1/courses/{}/", cred.canvas_url, course.id);
+        let course_api_link = format!("{}/api/v1/courses/{}/", canvas_url, course.id);
         fork!(
             process_data,
             (course_api_link, course.id, course_folder_path.clone()),
@@ -402,11 +403,7 @@ async fn main() -> Result<()> {
 
         fork!(
             process_videos,
-            (
-                cred.canvas_url.clone(),
-                course.id,
-                course_folder_path.clone()
-            ),
+            (canvas_url.clone(), course.id, course_folder_path.clone()),
             (String, u64, PathBuf),
             options.clone()
         );
