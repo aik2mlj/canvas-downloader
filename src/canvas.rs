@@ -235,7 +235,7 @@ pub struct ModuleItem {
     #[serde(rename = "type")]
     pub item_type: String, // "File", "Page", "Discussion", "Assignment", "Quiz", "SubHeader", "ExternalUrl", "ExternalTool"
     pub content_id: Option<u64>,
-    // pub html_url: Option<String>,
+    pub html_url: Option<String>,
     pub url: Option<String>,
     // pub page_url: Option<String>,
     pub external_url: Option<String>,

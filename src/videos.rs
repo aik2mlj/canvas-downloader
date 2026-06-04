@@ -285,11 +285,14 @@ async fn process_session(
     match m3u8_parser {
         Ok(Playlist::MasterPlaylist(pl)) => {
             // get the highest bandwidth
-            let download_variant = pl
-                .variants
-                .iter()
-                .max_by_key(|v| v.bandwidth)
-                .expect("No variants found");
+            let Some(download_variant) = pl.variants.iter().max_by_key(|v| v.bandwidth) else {
+                tracing::error!(
+                    "No Panopto variants found for session {} ({})",
+                    result.SessionID,
+                    result.SessionName
+                );
+                return Ok(());
+            };
 
             let panopto_index_m3u8 = format!(
                 "https://{}/sessions/{}/{}-{}.hls/{}",
@@ -311,7 +314,15 @@ async fn process_session(
                         .split("/")
                         .next()
                         .ok_or(anyhow!("Could not get URI ID"))?;
-                    let file_uri = index_pl.segments[0].uri.clone();
+                    let Some(first_segment) = index_pl.segments.first() else {
+                        tracing::error!(
+                            "No Panopto segments found for session {} ({})",
+                            result.SessionID,
+                            result.SessionName
+                        );
+                        return Ok(());
+                    };
+                    let file_uri = first_segment.uri.clone();
                     let file_uri_ext = Path::new(&file_uri)
                         .extension()
                         .unwrap_or(OsStr::new(""))

@@ -201,8 +201,12 @@ async fn main() -> Result<()> {
 
     // Create sub-folder if not exists
     if !args.destination_folder.exists() {
-        std::fs::create_dir(&args.destination_folder)
-            .unwrap_or_else(|e| panic!("Failed to create destination directory, err={e}"));
+        std::fs::create_dir(&args.destination_folder).with_context(|| {
+            format!(
+                "Failed to create destination directory: {}",
+                args.destination_folder.display()
+            )
+        })?;
     }
 
     // Prepare GET request options
