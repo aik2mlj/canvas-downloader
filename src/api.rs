@@ -1,32 +1,22 @@
 use crate::canvas::ProcessOptions;
-use anyhow::{Error, Result};
+use anyhow::{Context, Error, Result};
 use rand::Rng;
-use reqwest::{Response, Url, header};
+use reqwest::{header, Response};
 use std::time::Duration;
 
 pub async fn get_pages(link: String, options: &ProcessOptions) -> Result<Vec<Response>> {
-    fn parse_next_page(resp: &Response) -> Option<String> {
+    fn parse_next_page(resp: &Response) -> Result<Option<String>> {
         // Parse LINK header
-        let links = resp.headers().get(header::LINK)?.to_str().ok()?; // ok to not have LINK header
-        let rels = parse_link_header::parse_with_rel(links).unwrap_or_else(|e| {
-            panic!(
-                "Error parsing header for next page, uri={}, err={e:?}",
-                resp.url()
-            )
-        });
+        let Some(links) = resp.headers().get(header::LINK).and_then(|v| v.to_str().ok()) else {
+            return Ok(None);
+        };
+        let rels = parse_link_header::parse_with_rel(links).context(format!(
+            "Error parsing pagination Link header for {}",
+            resp.url()
+        ))?;
 
         // Is last page?
-        let nex = rels.get("next")?; // ok to not have "next"
-        let cur = rels
-            .get("current")
-            .unwrap_or_else(|| panic!("Could not find current page for {}", resp.url()));
-        let last = rels.get("last")?;
-        if cur == last {
-            return None;
-        };
-
-        // Next page
-        Some(nex.raw_uri.clone())
+        Ok(rels.get("next").map(|nex| nex.raw_uri.clone()))
     }
 
     let mut link = Some(link);
@@ -37,7 +27,7 @@ pub async fn get_pages(link: String, options: &ProcessOptions) -> Result<Vec<Res
         let resp = get_canvas_api(uri, options).await?;
 
         // Get next page before returning for json
-        link = parse_next_page(&resp);
+        link = parse_next_page(&resp)?;
         resps.push(resp);
     }
 
@@ -45,16 +35,10 @@ pub async fn get_pages(link: String, options: &ProcessOptions) -> Result<Vec<Res
 }
 
 pub async fn get_canvas_api(url: String, options: &ProcessOptions) -> Result<Response> {
-    let mut query_pairs: Vec<(String, String)> = Vec::new();
-    // insert into query_pairs from url.query_pairs();
-    for (key, value) in Url::parse(&url)?.query_pairs() {
-        query_pairs.push((key.to_string(), value.to_string()));
-    }
     for retry in 0..3 {
         let resp = options
             .client
             .get(&url)
-            .query(&query_pairs)
             .bearer_auth(&options.canvas_token)
             .timeout(Duration::from_secs(10))
             .send()

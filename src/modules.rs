@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::io::Write;
+use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
@@ -11,6 +12,14 @@ use crate::canvas::{File, ModuleItemResult, ModuleResult, ProcessOptions};
 use crate::files::{filter_files, process_file_id};
 use crate::pages::process_page_body;
 use crate::utils::{create_folder_if_not_exist_or_ignored, get_raw_json_path, prettify_json};
+
+fn write_url_shortcut(section_path: &Path, title: &str, url: &str) {
+    let url_file = section_path.join(format!("{}.url", sanitize_filename::sanitize(title)));
+    if let Ok(mut file) = std::fs::File::create(&url_file) {
+        let _ = writeln!(file, "[InternetShortcut]");
+        let _ = writeln!(file, "URL={}", url);
+    }
+}
 
 pub async fn process_modules(
     (url, path): (String, PathBuf),
@@ -209,14 +218,16 @@ async fn process_module_items(
                                 continue;
                             };
                             if let Some(external_url) = &item.external_url {
-                                let url_file = section_path.join(format!(
-                                    "{}.url",
-                                    sanitize_filename::sanitize(&item.title)
-                                ));
-                                if let Ok(mut file) = std::fs::File::create(&url_file) {
-                                    let _ = writeln!(file, "[InternetShortcut]");
-                                    let _ = writeln!(file, "URL={}", external_url);
-                                }
+                                write_url_shortcut(section_path, &item.title, external_url);
+                            }
+                        }
+                        "Quiz" => {
+                            let Some(section_path) = current_section.as_ref() else {
+                                continue;
+                            };
+                            if let Some(quiz_url) = item.html_url.as_deref().or(item.url.as_deref())
+                            {
+                                write_url_shortcut(section_path, &item.title, quiz_url);
                             }
                         }
                         "SubHeader" => {
@@ -232,7 +243,7 @@ async fn process_module_items(
                             current_section = Some(subheader_path);
                         }
                         _ => {
-                            tracing::error!(
+                            tracing::debug!(
                                 "Unsupported module item type '{}' for item '{}'",
                                 item.item_type,
                                 item.title
