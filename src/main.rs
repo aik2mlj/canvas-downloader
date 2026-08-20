@@ -42,6 +42,7 @@ use syllabus::process_syllabus;
 use users::process_users;
 use utils::{
     create_folder_if_not_exist_or_ignored, format_bytes, ignored, print_all_courses_by_term,
+    sanitize_path_component,
 };
 use videos::process_videos;
 
@@ -373,7 +374,7 @@ async fn main() -> Result<()> {
         // Prep path and mkdir -p
         let course_folder_path = args
             .destination_folder
-            .join(course.course_code.replace('/', "_"));
+            .join(sanitize_path_component(&course.course_code));
         if !create_folder_if_not_exist_or_ignored(&course_folder_path, &options)? {
             continue;
         }

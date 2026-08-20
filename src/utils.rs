@@ -4,6 +4,19 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+pub fn sanitize_path_component(name: &str) -> String {
+    sanitize_filename::sanitize_with_options(
+        name,
+        sanitize_filename::Options {
+            // Use the Windows-safe superset on every host so downloads have
+            // portable, predictable directory names.
+            windows: true,
+            replacement: "_",
+            ..Default::default()
+        },
+    )
+}
+
 pub fn print_all_courses_by_term(courses: &[Course]) {
     let mut grouped_courses: HashMap<u64, Vec<(&str, &str)>> = HashMap::new();
 
@@ -166,5 +179,20 @@ pub fn format_bytes(bytes: u64) -> String {
         format!("{:.1} {}", size, unit)
     } else {
         format!("{:.2} {}", size, unit)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::sanitize_path_component;
+
+    #[test]
+    fn path_components_are_sanitized_consistently_across_platforms() {
+        assert_eq!(
+            sanitize_path_component("Course Name: Course/Name 2"),
+            "Course Name_ Course_Name 2"
+        );
+        assert_eq!(sanitize_path_component("CON"), "_");
+        assert_eq!(sanitize_path_component("Course. "), "Course_");
     }
 }
