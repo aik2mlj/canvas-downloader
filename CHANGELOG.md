@@ -7,9 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
+## [0.4.2] - 2026-08-20
+
+### Added
+
+- Canvas Quiz module items are saved as `.url` shortcuts, alongside external URL module items.
+
+### Changed
 
 - Module items under a `SubHeader` are now placed inside that subheader's folder instead of being flattened into the module folder. Files, pages, and `.url` shortcuts following a `SubHeader` are routed into a sibling section folder until the next `SubHeader`; ignored subheader folders also skip their contents.
+
+### Fixed
+
+- Course directory names now use the same Windows-safe sanitization on Linux, macOS, and Windows. Invalid characters, reserved names, and trailing dots or spaces are replaced with `_`.
+- Canvas and term IDs are handled as 64-bit values, supporting institutions whose IDs exceed the 32-bit range.
+- Canvas API requests now retry transient failures, including timeouts, rate limits, server errors, and slow responses; the request timeout is increased to 60 seconds.
+- Pagination errors now return useful context instead of panicking, and pagination follows Canvas's `next` link directly.
+- Empty Panopto playlists are reported and skipped instead of aborting the download.
 
 ## [0.4.1] - 2026-04-19
 
@@ -145,7 +159,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Canvas API parsing errors for inconsistent response shapes.
 - Video download bug from an earlier dependency upgrade.
 
-[Unreleased]: https://github.com/aik2mlj/canvas-downloader/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/aik2mlj/canvas-downloader/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/aik2mlj/canvas-downloader/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/aik2mlj/canvas-downloader/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/aik2mlj/canvas-downloader/compare/v0.3.5...v0.4.0
 [0.3.5]: https://github.com/aik2mlj/canvas-downloader/compare/v0.3.4...v0.3.5
